@@ -1,0 +1,2208 @@
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="weekday" id="weekday">—</div>
+      <div class="date" id="date">—</div>
+    </div>
+    <div class="rings">
+      <div class="ring-wrap" title="本日のルーティン達成率">
+        <svg viewBox="0 0 60 60" class="ring">
+          <circle cx="30" cy="30" r="25" class="ring-track"/>
+          <circle cx="30" cy="30" r="25" class="ring-fill ring-r" id="ringFillR"
+                  stroke-dasharray="157.08" stroke-dashoffset="157.08"/>
+        </svg>
+        <div class="ring-text">
+          <div class="ring-pct" id="ringPctR">—</div>
+        </div>
+        <div class="ring-label">ルーティン</div>
+      </div>
+      <div class="ring-wrap" title="本日のTodo達成率">
+        <svg viewBox="0 0 60 60" class="ring">
+          <circle cx="30" cy="30" r="25" class="ring-track"/>
+          <circle cx="30" cy="30" r="25" class="ring-fill ring-t" id="ringFillT"
+                  stroke-dasharray="157.08" stroke-dashoffset="157.08"/>
+        </svg>
+        <div class="ring-text">
+          <div class="ring-pct" id="ringPctT">—</div>
+        </div>
+        <div class="ring-label">Todo</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="strip-section">
+    <div class="strip-header">
+      <div class="strip-title">記録</div>
+      <div class="strip-stats">
+        <span class="stat">
+          <span class="stat-num" id="currentStreak">0</span>
+          <span class="stat-label">継続日数</span>
+        </span>
+        <span class="stat">
+          <span class="stat-num" id="longestStreak">0</span>
+          <span class="stat-label">最長</span>
+        </span>
+        <span class="stat">
+          <span class="stat-num" id="totalDone">0</span>
+          <span class="stat-label">累計達成</span>
+        </span>
+      </div>
+    </div>
+    <div class="strip" id="strip" aria-label="過去60日間の達成記録"></div>
+    <div class="strip-legend">
+      <span>60日前</span>
+      <span class="legend-scale">
+        <span class="legend-cell l0"></span>
+        <span class="legend-cell l1"></span>
+        <span class="legend-cell l2"></span>
+        <span class="legend-cell l3"></span>
+        <span class="legend-cell l4"></span>
+      </span>
+      <span>今日</span>
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="today">今日</button>
+    <button class="tab" data-tab="routines">ルーティン</button>
+    <button class="tab" data-tab="todos">Todo</button>
+    <button class="tab" data-tab="gym">ジム</button>
+    <button class="tab" data-tab="journal">日記</button>
+    <button class="tab" data-tab="stats">統計</button>
+  </nav>
+
+  <!-- TODAY -->
+  <section class="panel" data-panel="today">
+    <div class="encouragement" id="encouragement"></div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>今日のルーティン</h2>
+        <span class="section-meta" id="routineMeta">—</span>
+      </div>
+      <ul class="list" id="todayRoutines"></ul>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>今日やる Todo</h2>
+        <span class="section-meta" id="todoMeta">—</span>
+      </div>
+      <ul class="list" id="todayTodos"></ul>
+    </div>
+  </section>
+
+  <!-- ROUTINES -->
+  <section class="panel hidden" data-panel="routines">
+    <form class="add-form" id="routineForm">
+      <input type="text" id="routineName" placeholder="新しいルーティン (例: 読書30分)" maxlength="40" required />
+      <input type="text" id="routineEmoji" placeholder="🌱" maxlength="2" />
+      <button type="submit">追加</button>
+    </form>
+    <ul class="list manage-list" id="manageRoutines"></ul>
+  </section>
+
+  <!-- TODOS -->
+  <section class="panel hidden" data-panel="todos">
+    <form class="add-form" id="todoForm">
+      <input type="text" id="todoTitle" placeholder="新しいTodo" maxlength="80" required />
+      <input type="date" id="todoDue" />
+      <select id="todoPriority">
+        <option value="normal">通常</option>
+        <option value="high">高</option>
+        <option value="low">低</option>
+      </select>
+      <button type="submit">追加</button>
+    </form>
+    <div class="todo-filter">
+      <button class="filter-btn active" data-filter="active">未完了</button>
+      <button class="filter-btn" data-filter="all">すべて</button>
+      <button class="filter-btn" data-filter="done">完了済</button>
+    </div>
+    <ul class="list manage-list" id="manageTodos"></ul>
+  </section>
+
+  <!-- GYM -->
+  <section class="panel hidden" data-panel="gym">
+    <div class="gym-summary">
+      <div class="gym-summary-card">
+        <div class="gym-num" id="gymTodaySets">0</div>
+        <div class="gym-sub">本日のセット</div>
+      </div>
+      <div class="gym-summary-card">
+        <div class="gym-num" id="gymStreak">0</div>
+        <div class="gym-sub">週内の日数</div>
+      </div>
+      <div class="gym-summary-card">
+        <div class="gym-num" id="gymTotal">0</div>
+        <div class="gym-sub">通算セッション</div>
+      </div>
+    </div>
+
+    <form class="add-form gym-log-form" id="gymForm">
+      <select id="gymExercise" required>
+        <option value="">エクササイズを選択</option>
+      </select>
+      <input type="number" id="gymWeight" placeholder="重量 kg" min="0" step="0.5" inputmode="decimal" required />
+      <input type="number" id="gymReps" placeholder="回数" min="1" max="999" inputmode="numeric" required />
+      <button type="submit">記録</button>
+    </form>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>本日のセッション</h2>
+        <span class="section-meta" id="gymSessionDate"></span>
+      </div>
+      <div id="todaySession" class="session-block"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>エクササイズ</h2></div>
+      <form class="add-form sub-form" id="exerciseForm">
+        <input type="text" id="exerciseName" placeholder="エクササイズ名 (例: ベンチプレス)" maxlength="30" required />
+        <select id="exerciseCategory">
+          <option value="strength">筋トレ</option>
+          <option value="cardio">有酸素</option>
+          <option value="other">その他</option>
+        </select>
+        <button type="submit">追加</button>
+      </form>
+      <ul class="list" id="exerciseList"></ul>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section class="panel hidden" data-panel="journal">
+    <div class="section">
+      <div class="section-head">
+        <h2>今日の記録</h2>
+        <span class="section-meta" id="journalSavedHint"></span>
+      </div>
+      <div class="journal-editor">
+        <div class="journal-row">
+          <div class="journal-label">気分</div>
+          <div class="picker mood-picker" id="moodPicker">
+            <button type="button" class="pick mood-pick" data-mood="1">😞</button>
+            <button type="button" class="pick mood-pick" data-mood="2">😕</button>
+            <button type="button" class="pick mood-pick" data-mood="3">😐</button>
+            <button type="button" class="pick mood-pick" data-mood="4">🙂</button>
+            <button type="button" class="pick mood-pick" data-mood="5">😄</button>
+          </div>
+        </div>
+        <div class="journal-row">
+          <div class="journal-label">体力</div>
+          <div class="picker energy-picker" id="energyPicker">
+            <button type="button" class="pick energy-pick" data-energy="1"></button>
+            <button type="button" class="pick energy-pick" data-energy="2"></button>
+            <button type="button" class="pick energy-pick" data-energy="3"></button>
+            <button type="button" class="pick energy-pick" data-energy="4"></button>
+            <button type="button" class="pick energy-pick" data-energy="5"></button>
+          </div>
+        </div>
+        <textarea id="journalText" rows="6" placeholder="今日あったこと、気づいたこと、明日へのメモ。&#10;&#10;書いた内容は自動で保存されます。"></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>過去の記録</h2>
+        <span class="section-meta"><span id="journalCount">0</span>件 / <span id="journalStreakText">0</span>日連続</span>
+      </div>
+      <ul class="journal-list" id="journalList"></ul>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="panel hidden" data-panel="stats">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-num" id="weekRate">0%</div>
+        <div class="stat-card-label">今週のルーティン</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="monthRate">0%</div>
+        <div class="stat-card-label">直近30日</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="perfectDays">0</div>
+        <div class="stat-card-label">完璧な日</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="activeRoutines">0</div>
+        <div class="stat-card-label">ルーティン数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="todoLifetimeRate">0%</div>
+        <div class="stat-card-label">Todo達成率</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="todoDoneCount">0</div>
+        <div class="stat-card-label">Todo完了数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="gymSessionsStat">0</div>
+        <div class="stat-card-label">ジムセッション</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="journalStreakStat">0</div>
+        <div class="stat-card-label">日記の連続</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>ルーティン別の継続記録</h2></div>
+      <ul class="streak-list" id="streakList"></ul>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>獲得バッジ</h2></div>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <div class="section danger-zone">
+      <div class="section-head"><h2>データ</h2></div>
+      <button class="danger-btn" id="resetBtn">すべてリセット</button>
+    </div>
+  </section>
+
+  <div id="toast" class="toast"></div>
+</div>
+
+<style>
+  :root {
+    --bg: #FBFAF6;
+    --surface: #FFFFFF;
+    --surface-sunk: #F4F2EC;
+    --ink: #1A1D26;
+    --ink-soft: #5C6070;
+    --ink-mute: #9498A3;
+    --line: #E8E4DA;
+    --line-soft: #F0EDE5;
+    --done: #2F7758;
+    --done-soft: #DDEFE5;
+    --fire: #D9542B;
+    --fire-soft: #FBE6DC;
+    --gold: #B8893A;
+    --indigo: #4A4E9A;
+    --indigo-soft: #E4E5F2;
+    --danger: #B23A3A;
+    --heat-0: #EFEBE0;
+    --heat-1: #F2D8AF;
+    --heat-2: #ECB773;
+    --heat-3: #DE8C44;
+    --heat-4: #B85B26;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 2px rgba(26,29,38,0.04), 0 4px 12px rgba(26,29,38,0.04);
+    --font-display: 'Inter', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', system-ui, sans-serif;
+    --font-body: 'Inter', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body { padding: 16px 0; }
+
+  #app {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 16px 14px 80px;
+    background: var(--bg);
+    border-radius: 28px;
+    box-shadow: 0 1px 2px rgba(26,29,38,0.06), 0 20px 50px rgba(26,29,38,0.08);
+    min-height: calc(100vh - 32px);
+  }
+
+  /* Topbar */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    gap: 16px;
+  }
+  .weekday {
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .date {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-top: 2px;
+  }
+  .rings {
+    display: flex;
+    gap: 14px;
+  }
+  .ring-wrap {
+    position: relative;
+    width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .ring {
+    width: 60px;
+    height: 60px;
+    transform: rotate(-90deg);
+  }
+  .ring-track {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 5;
+  }
+  .ring-fill {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s cubic-bezier(.4,1.4,.5,1);
+  }
+  .ring-fill.ring-r { stroke: var(--done); }
+  .ring-fill.ring-t { stroke: var(--indigo); }
+  .ring-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring-pct {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .ring-label {
+    font-size: 10px;
+    color: var(--ink-mute);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+
+  /* Strip section */
+  .strip-section {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  .strip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .strip-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .strip-stats {
+    display: flex;
+    gap: 18px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(60, 1fr);
+    gap: 3px;
+    margin-bottom: 10px;
+  }
+  .cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: var(--heat-0);
+    transition: transform 0.15s;
+    position: relative;
+  }
+  .cell.l1 { background: var(--heat-1); }
+  .cell.l2 { background: var(--heat-2); }
+  .cell.l3 { background: var(--heat-3); }
+  .cell.l4 { background: var(--heat-4); }
+  .cell.today { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .cell:hover { transform: scale(1.4); z-index: 2; }
+  .strip-legend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
+  .legend-scale {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+  .legend-cell {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--heat-0);
+  }
+  .legend-cell.l1 { background: var(--heat-1); }
+  .legend-cell.l2 { background: var(--heat-2); }
+  .legend-cell.l3 { background: var(--heat-3); }
+  .legend-cell.l4 { background: var(--heat-4); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    background: none;
+    border: none;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: var(--font-body);
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+    font-weight: 600;
+  }
+
+  .panel { animation: fadeIn 0.25s ease; }
+  .panel.hidden { display: none; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .encouragement {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--done);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .encouragement.fire { border-left-color: var(--fire); }
+  .encouragement.gold { border-left-color: var(--gold); }
+  .encouragement strong { color: var(--ink); font-weight: 600; }
+
+  .section { margin-bottom: 28px; }
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+  .section-head h2 {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 0;
+  }
+  .section-meta {
+    font-size: 12px;
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Lists */
+  .list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .list:empty::after {
+    content: "まだ何も追加されていません";
+    display: block;
+    padding: 24px;
+    text-align: center;
+    color: var(--ink-mute);
+    font-size: 13px;
+  }
+  .item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    gap: 12px;
+    transition: background 0.15s;
+  }
+  .item:last-child { border-bottom: none; }
+  .item:hover { background: var(--surface-sunk); }
+
+  .check {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--line);
+    border-radius: 50%;
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+  }
+  .check:hover {
+    border-color: var(--done);
+    background: var(--done-soft);
+  }
+  .check.done {
+    background: var(--done);
+    border-color: var(--done);
+  }
+  .check.done::after {
+    content: '';
+    width: 10px;
+    height: 6px;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg) translate(1px, -1px);
+    animation: checkPop 0.3s ease;
+  }
+  @keyframes checkPop {
+    0% { transform: rotate(-45deg) translate(1px, -1px) scale(0); }
+    60% { transform: rotate(-45deg) translate(1px, -1px) scale(1.3); }
+    100% { transform: rotate(-45deg) translate(1px, -1px) scale(1); }
+  }
+
+  .item-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .item-title {
+    font-size: 15px;
+    line-height: 1.35;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .item.done .item-title {
+    color: var(--ink-mute);
+    text-decoration: line-through;
+    text-decoration-color: var(--ink-mute);
+  }
+  .item-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--ink-mute);
+    flex-wrap: wrap;
+  }
+  .badge-streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--fire);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .badge-streak.zero { color: var(--ink-mute); font-weight: 400; }
+  .badge-priority {
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge-priority.high { background: #FBE6DC; color: #B23A3A; }
+  .badge-priority.low { background: #E8EDF5; color: #5C6070; }
+  .badge-due { font-variant-numeric: tabular-nums; }
+  .badge-due.overdue { color: var(--danger); font-weight: 600; }
+
+  .item-action {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+  }
+  .item-action:hover { color: var(--danger); background: var(--surface-sunk); }
+
+  .emoji-badge {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--surface-sunk);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  /* Add forms */
+  .add-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .add-form input, .add-form select {
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    flex: 1;
+    min-width: 0;
+  }
+  .add-form input:focus, .add-form select:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+  #routineEmoji, #todoDue, #todoPriority { flex: 0 0 auto; }
+  #routineEmoji { width: 60px; text-align: center; font-size: 18px; }
+  .add-form button {
+    padding: 10px 18px;
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .add-form button:hover { background: #000; }
+
+  .sub-form input, .sub-form select, .sub-form button {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .todo-filter {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .filter-btn {
+    background: none;
+    border: 1px solid var(--line);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--ink-soft); }
+  .filter-btn.active {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+
+  /* Gym */
+  .gym-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .gym-summary-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+  .gym-num {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .gym-sub {
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-top: 6px;
+    letter-spacing: 0.03em;
+  }
+
+  .gym-log-form #gymExercise { flex: 1.5 1 180px; }
+  .gym-log-form #gymWeight, .gym-log-form #gymReps { flex: 0 0 90px; }
+
+  .session-block {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .session-empty {
+    text-align: center;
+    color: var(--ink-mute);
+    font-size: 13px;
+    padding: 8px;
+  }
+  .session-group {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .session-group:first-child { padding-top: 0; }
+  .session-group:last-child { border-bottom: none; padding-bottom: 0; }
+  .session-group-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .session-exercise-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .session-totals {
+    font-size: 11px;
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums;
+  }
+  .set-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .set-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-sunk);
+    border: 1px solid var(--line);
+    padding: 4px 8px 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .set-chip-num {
+    color: var(--ink-mute);
+    font-size: 10px;
+    margin-right: 2px;
+  }
+  .set-chip button {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    cursor: pointer;
+    padding: 0 0 0 4px;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .set-chip button:hover { color: var(--danger); }
+
+  .exercise-item .item-meta {
+    color: var(--ink-mute);
+  }
+  .exercise-stat {
+    font-variant-numeric: tabular-nums;
+  }
+  .exercise-stat.pr { color: var(--gold); font-weight: 600; }
+
+  /* Journal */
+  .journal-editor {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .journal-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+  .journal-label {
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+    flex: 0 0 40px;
+    font-weight: 500;
+  }
+  .picker {
+    display: flex;
+    gap: 6px;
+  }
+  .pick {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    padding: 0;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .mood-pick:hover { border-color: var(--ink-soft); }
+  .mood-pick.selected {
+    border-color: var(--ink);
+    background: var(--surface-sunk);
+    transform: scale(1.08);
+  }
+  .energy-pick {
+    background: var(--surface);
+    position: relative;
+  }
+  .energy-pick::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .energy-pick:hover { border-color: var(--ink-soft); }
+  .energy-pick.selected {
+    border-color: var(--indigo);
+    background: var(--indigo-soft);
+  }
+  .energy-pick.selected::after {
+    background: var(--indigo);
+  }
+
+  #journalText {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--surface);
+    resize: vertical;
+    margin-top: 8px;
+  }
+  #journalText:focus { outline: none; border-color: var(--ink-soft); }
+
+  .journal-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .journal-list:empty::after {
+    content: "まだ記録がありません";
+    display: block;
+    padding: 24px;
+    text-align: center;
+    color: var(--ink-mute);
+    font-size: 13px;
+  }
+  .journal-entry {
+    padding: 16px;
+    border-bottom: 1px solid var(--line-soft);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .journal-entry:last-child { border-bottom: none; }
+  .journal-entry:hover { background: var(--surface-sunk); }
+  .journal-entry-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .journal-entry-date {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .journal-entry-mood { font-size: 16px; }
+  .journal-entry-energy {
+    display: inline-flex;
+    gap: 2px;
+    margin-left: auto;
+  }
+  .journal-entry-energy span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .journal-entry-energy span.on { background: var(--indigo); }
+  .journal-entry-text {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .journal-entry.expanded .journal-entry-text {
+    display: block;
+    white-space: pre-wrap;
+    color: var(--ink);
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-card-num {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-card-label {
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+  }
+
+  .streak-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .streak-list li {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    gap: 12px;
+  }
+  .streak-list li:last-child { border-bottom: none; }
+  .streak-name { flex: 1; font-size: 14px; }
+  .streak-val {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--fire);
+    font-size: 13px;
+  }
+  .streak-val.zero { color: var(--ink-mute); font-weight: 500; }
+  .streak-bar {
+    flex: 0 0 80px;
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .streak-bar-fill {
+    height: 100%;
+    background: var(--fire);
+    border-radius: 2px;
+    transition: width 0.4s;
+  }
+
+  .badges {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+  }
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    text-align: center;
+    opacity: 0.4;
+    filter: grayscale(0.8);
+    transition: all 0.3s;
+  }
+  .badge.earned {
+    opacity: 1;
+    filter: none;
+    background: linear-gradient(135deg, #FFF8EC 0%, #FFFFFF 100%);
+    border-color: var(--gold);
+  }
+  .badge-icon { font-size: 28px; line-height: 1; margin-bottom: 6px; }
+  .badge-name { font-size: 11px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+  .badge-desc { font-size: 10px; color: var(--ink-mute); line-height: 1.3; }
+
+  .danger-zone .danger-btn {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--danger);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .danger-zone .danger-btn:hover { background: #FBE6DC; border-color: var(--danger); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Phone-size base — applied regardless of viewport since container is fixed-width */
+  .date { font-size: 26px; }
+  .strip-stats { gap: 14px; }
+  .stat-num { font-size: 18px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .cell { border-radius: 2px; }
+  .strip { gap: 2px; }
+  .add-form { gap: 6px; }
+  .add-form input, .add-form select, .add-form button { font-size: 13px; padding: 9px 10px; }
+  .topbar { flex-wrap: wrap; }
+  .rings { width: 100%; justify-content: flex-end; }
+  .pick { width: 32px; height: 32px; font-size: 16px; }
+  .gym-summary { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .gym-num { font-size: 18px; }
+  .badges { grid-template-columns: repeat(3, 1fr); }
+  .strip-section { padding: 16px; }
+  .tabs { gap: 0; }
+  .tab { padding: 10px 10px; font-size: 13px; }
+  body { background: linear-gradient(180deg, #EFEDE6 0%, #E7E4DA 100%); min-height: 100vh; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<script>
+// ============================================================
+// Data
+// ============================================================
+const STORAGE_KEY = 'habit-todo-app-v1';
+
+const defaultData = {
+  routines: [],
+  todos: [],
+  completions: {},
+  earnedBadges: [],
+  gym: { exercises: [], sets: [] },
+  journal: { entries: {} },
+  version: 2
+};
+
+let data = JSON.parse(JSON.stringify(defaultData));
+
+function todayStr() { return dateStr(new Date()); }
+function dateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+async function loadData() {
+  try {
+    const result = await window.storage.get(STORAGE_KEY);
+    if (result && result.value) {
+      const parsed = JSON.parse(result.value);
+      data = { ...defaultData, ...parsed };
+      if (!data.completions) data.completions = {};
+      if (!data.routines) data.routines = [];
+      if (!data.todos) data.todos = [];
+      if (!data.earnedBadges) data.earnedBadges = [];
+      if (!data.gym) data.gym = { exercises: [], sets: [] };
+      if (!data.gym.exercises) data.gym.exercises = [];
+      if (!data.gym.sets) data.gym.sets = [];
+      if (!data.journal) data.journal = { entries: {} };
+      if (!data.journal.entries) data.journal.entries = {};
+    }
+  } catch (e) { /* first run */ }
+}
+
+async function saveData() {
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error('Storage save failed', e);
+    showToast('保存に失敗しました');
+  }
+}
+
+// ============================================================
+// Computations
+// ============================================================
+function getCompletionRateForDate(dStr) {
+  const completed = (data.completions[dStr] || []).length;
+  const total = data.routines.length;
+  if (total === 0) return null;
+  return completed / total;
+}
+
+function getHeatLevel(rate) {
+  if (rate === null) return 0;
+  if (rate === 0) return 0;
+  if (rate < 0.25) return 1;
+  if (rate < 0.5) return 2;
+  if (rate < 0.99) return 3;
+  return 4;
+}
+
+function getCurrentStreak() {
+  if (data.routines.length === 0) return 0;
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 400; i++) {
+    const key = dateStr(d);
+    const completed = (data.completions[key] || []).length;
+    if (completed > 0) streak++;
+    else { if (i === 0) { d.setDate(d.getDate() - 1); continue; } break; }
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function getLongestStreak() {
+  const dates = Object.keys(data.completions)
+    .filter(k => (data.completions[k] || []).length > 0)
+    .sort();
+  if (dates.length === 0) return 0;
+  let longest = 1, current = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const prev = new Date(dates[i - 1]);
+    const cur = new Date(dates[i]);
+    const diff = (cur - prev) / (1000 * 60 * 60 * 24);
+    if (diff === 1) { current++; longest = Math.max(longest, current); }
+    else current = 1;
+  }
+  return longest;
+}
+
+function getTotalCompletions() {
+  let total = 0;
+  for (const key in data.completions) total += (data.completions[key] || []).length;
+  total += data.todos.filter(t => t.completed).length;
+  return total;
+}
+
+function getRoutineStreak(routineId) {
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 400; i++) {
+    const key = dateStr(d);
+    const completed = (data.completions[key] || []).includes(routineId);
+    if (completed) streak++;
+    else { if (i === 0) { d.setDate(d.getDate() - 1); continue; } break; }
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function getRoutineLongestStreak(routineId) {
+  const dates = Object.keys(data.completions)
+    .filter(k => (data.completions[k] || []).includes(routineId))
+    .sort();
+  if (dates.length === 0) return 0;
+  let longest = 1, current = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const prev = new Date(dates[i - 1]);
+    const cur = new Date(dates[i]);
+    const diff = (cur - prev) / (1000 * 60 * 60 * 24);
+    if (diff === 1) { current++; longest = Math.max(longest, current); }
+    else current = 1;
+  }
+  return longest;
+}
+
+function getPeriodRate(days) {
+  if (data.routines.length === 0) return 0;
+  const d = new Date();
+  let totalSlots = 0, doneSlots = 0;
+  for (let i = 0; i < days; i++) {
+    const key = dateStr(d);
+    totalSlots += data.routines.length;
+    doneSlots += (data.completions[key] || []).length;
+    d.setDate(d.getDate() - 1);
+  }
+  return totalSlots === 0 ? 0 : doneSlots / totalSlots;
+}
+
+function getPerfectDays() {
+  if (data.routines.length === 0) return 0;
+  let count = 0;
+  for (const key in data.completions) {
+    if ((data.completions[key] || []).length >= data.routines.length) count++;
+  }
+  return count;
+}
+
+// Todo computations
+function getTodayTodos() {
+  const todayKey = todayStr();
+  return data.todos.filter(t => {
+    if (t.completed) return t.completedAt && t.completedAt.startsWith(todayKey);
+    if (!t.dueDate) return true;
+    return t.dueDate <= todayKey;
+  });
+}
+
+function getTodayTodoRate() {
+  const visible = getTodayTodos();
+  if (visible.length === 0) return null;
+  return visible.filter(t => t.completed).length / visible.length;
+}
+
+function getTodoLifetimeRate() {
+  if (data.todos.length === 0) return null;
+  return data.todos.filter(t => t.completed).length / data.todos.length;
+}
+
+function getTodoDoneCount() {
+  return data.todos.filter(t => t.completed).length;
+}
+
+// Gym
+function getTodaySets() {
+  const todayKey = todayStr();
+  return data.gym.sets.filter(s => s.date === todayKey);
+}
+
+function getWorkoutDates() {
+  const set = new Set();
+  for (const s of data.gym.sets) set.add(s.date);
+  return [...set].sort();
+}
+
+function getWorkoutCountThisWeek() {
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(today.getDate() - 6);
+  const startKey = dateStr(start);
+  const endKey = dateStr(today);
+  const days = new Set();
+  for (const s of data.gym.sets) {
+    if (s.date >= startKey && s.date <= endKey) days.add(s.date);
+  }
+  return days.size;
+}
+
+function getExerciseStats(exerciseId) {
+  const sets = data.gym.sets.filter(s => s.exerciseId === exerciseId);
+  if (sets.length === 0) return null;
+  const sorted = [...sets].sort((a, b) => b.timestamp - a.timestamp);
+  const lastDate = sorted[0].date;
+  const lastSets = sorted.filter(s => s.date === lastDate);
+  let pr = sets[0];
+  for (const s of sets) {
+    if (s.weight > pr.weight || (s.weight === pr.weight && s.reps > pr.reps)) pr = s;
+  }
+  return { lastDate, lastSets, pr, totalSets: sets.length };
+}
+
+// Journal
+function getJournalStreak() {
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 400; i++) {
+    const key = dateStr(d);
+    const entry = data.journal.entries[key];
+    const hasContent = entry && (entry.text?.trim() || entry.mood || entry.energy);
+    if (hasContent) streak++;
+    else { if (i === 0) { d.setDate(d.getDate() - 1); continue; } break; }
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function getJournalEntryCount() {
+  return Object.keys(data.journal.entries).filter(k => {
+    const e = data.journal.entries[k];
+    return e && (e.text?.trim() || e.mood || e.energy);
+  }).length;
+}
+
+// ============================================================
+// Badges
+// ============================================================
+const BADGE_DEFS = [
+  { id: 'first', icon: '🌱', name: 'はじめの一歩', desc: '最初の1つを完了', check: () => getTotalCompletions() >= 1 },
+  { id: 'streak3', icon: '🔥', name: '3日継続', desc: 'ルーティン3日連続', check: () => getCurrentStreak() >= 3 || getLongestStreak() >= 3 },
+  { id: 'streak7', icon: '⭐', name: '1週間', desc: 'ルーティン7日連続', check: () => getLongestStreak() >= 7 },
+  { id: 'streak30', icon: '🏆', name: '30日達成', desc: 'ルーティン30日連続', check: () => getLongestStreak() >= 30 },
+  { id: 'streak100', icon: '💎', name: '100日達成', desc: 'ルーティン100日連続', check: () => getLongestStreak() >= 100 },
+  { id: 'perfect', icon: '✨', name: '完璧な1日', desc: '全ルーティン達成', check: () => getPerfectDays() >= 1 },
+  { id: 'perfect10', icon: '🌟', name: '完璧10日', desc: '完璧な日を10回', check: () => getPerfectDays() >= 10 },
+  { id: 'collector', icon: '📚', name: 'コレクター', desc: '50回完了を達成', check: () => getTotalCompletions() >= 50 },
+  { id: 'centurion', icon: '👑', name: '達人', desc: '200回完了を達成', check: () => getTotalCompletions() >= 200 },
+  { id: 'gym1', icon: '💪', name: 'ジム初回', desc: '初めての1セット', check: () => data.gym.sets.length >= 1 },
+  { id: 'gym10', icon: '🏋️', name: '10セッション', desc: 'ジムに10日通った', check: () => getWorkoutDates().length >= 10 },
+  { id: 'gym50', icon: '🥇', name: '50セッション', desc: 'ジムに50日通った', check: () => getWorkoutDates().length >= 50 },
+  { id: 'journal1', icon: '📓', name: '記録のはじまり', desc: '初めての日記', check: () => getJournalEntryCount() >= 1 },
+  { id: 'journal7', icon: '📖', name: '1週間の記録', desc: '日記7日連続', check: () => getJournalStreak() >= 7 },
+  { id: 'journal30', icon: '🗂️', name: '1ヶ月の記録', desc: '日記30日連続', check: () => getJournalStreak() >= 30 },
+];
+
+function checkBadges() {
+  let newlyEarned = [];
+  for (const b of BADGE_DEFS) {
+    if (!data.earnedBadges.includes(b.id) && b.check()) {
+      data.earnedBadges.push(b.id);
+      newlyEarned.push(b);
+    }
+  }
+  return newlyEarned;
+}
+
+// ============================================================
+// Render
+// ============================================================
+function formatDateJP(d) {
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  return `${months[d.getMonth()]} ${d.getDate()}`;
+}
+function formatWeekday(d) {
+  const days = ['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'];
+  return days[d.getDay()];
+}
+
+function renderTopbar() {
+  const now = new Date();
+  document.getElementById('weekday').textContent = formatWeekday(now);
+  document.getElementById('date').textContent = formatDateJP(now);
+
+  const todayKey = todayStr();
+  // Routines ring
+  const rDone = (data.completions[todayKey] || []).length;
+  const rTotal = data.routines.length;
+  const rRate = rTotal === 0 ? 0 : rDone / rTotal;
+  const circumference = 2 * Math.PI * 25;
+  document.getElementById('ringFillR').setAttribute('stroke-dashoffset', circumference * (1 - rRate));
+  document.getElementById('ringPctR').textContent = rTotal === 0 ? '—' : Math.round(rRate * 100) + '%';
+
+  // Todos ring
+  const todoRate = getTodayTodoRate();
+  document.getElementById('ringFillT').setAttribute('stroke-dashoffset', circumference * (1 - (todoRate ?? 0)));
+  document.getElementById('ringPctT').textContent = todoRate === null ? '—' : Math.round(todoRate * 100) + '%';
+}
+
+function renderStrip() {
+  const strip = document.getElementById('strip');
+  strip.innerHTML = '';
+  const today = new Date();
+  for (let i = 59; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = dateStr(d);
+    const rate = getCompletionRateForDate(key);
+    const level = getHeatLevel(rate);
+    const cell = document.createElement('div');
+    cell.className = `cell l${level}` + (i === 0 ? ' today' : '');
+    const completed = (data.completions[key] || []).length;
+    const total = data.routines.length;
+    const dateLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+    cell.title = total === 0 ? dateLabel : `${dateLabel} — ${completed}/${total}`;
+    strip.appendChild(cell);
+  }
+  document.getElementById('currentStreak').textContent = getCurrentStreak();
+  document.getElementById('longestStreak').textContent = getLongestStreak();
+  document.getElementById('totalDone').textContent = getTotalCompletions();
+}
+
+function renderEncouragement() {
+  const el = document.getElementById('encouragement');
+  el.className = 'encouragement';
+  const todayKey = todayStr();
+  const completed = (data.completions[todayKey] || []).length;
+  const total = data.routines.length;
+  const streak = getCurrentStreak();
+
+  let html = '';
+  if (total === 0) {
+    html = '右上の <strong>ルーティン</strong> タブから、毎日続けたい習慣を追加してください。記録はここに溜まっていきます。';
+  } else if (completed === total) {
+    el.classList.add('gold');
+    html = `本日のルーティンをすべて達成しました。<strong>${streak}日連続</strong>です。`;
+  } else if (completed === 0) {
+    if (streak > 0) {
+      el.classList.add('fire');
+      html = `<strong>${streak}日続けてきました</strong>。今日もひとつ、はじめてみてください。`;
+    } else {
+      html = '今日もはじめましょう。ひとつ達成するだけで、記録はゼロには戻りません。';
+    }
+  } else {
+    const remain = total - completed;
+    if (streak >= 3) {
+      el.classList.add('fire');
+      html = `<strong>${streak}日連続</strong>。残り <strong>${remain}件</strong> で本日も完璧です。`;
+    } else {
+      html = `本日 <strong>${completed}/${total}</strong> 達成。残り ${remain}件 です。`;
+    }
+  }
+  el.innerHTML = html;
+}
+
+function renderTodayRoutines() {
+  const list = document.getElementById('todayRoutines');
+  list.innerHTML = '';
+  const todayKey = todayStr();
+  const todayDone = data.completions[todayKey] || [];
+
+  data.routines.forEach(r => {
+    const isDone = todayDone.includes(r.id);
+    const streak = getRoutineStreak(r.id);
+    const li = document.createElement('li');
+    li.className = 'item' + (isDone ? ' done' : '');
+    li.innerHTML = `
+      <button class="check ${isDone ? 'done' : ''}" aria-label="達成切替"></button>
+      <div class="emoji-badge">${escapeHtml(r.emoji || '✓')}</div>
+      <div class="item-body">
+        <div class="item-title">${escapeHtml(r.name)}</div>
+        <div class="item-meta">
+          <span class="badge-streak ${streak === 0 ? 'zero' : ''}">
+            ${streak > 0 ? '🔥' : ''} ${streak}日連続
+          </span>
+        </div>
+      </div>
+    `;
+    li.querySelector('.check').addEventListener('click', () => toggleRoutineForToday(r.id));
+    list.appendChild(li);
+  });
+
+  document.getElementById('routineMeta').textContent =
+    data.routines.length === 0 ? '' : `${todayDone.length}/${data.routines.length}`;
+}
+
+function renderTodayTodos() {
+  const list = document.getElementById('todayTodos');
+  list.innerHTML = '';
+  const visible = getTodayTodos();
+  visible.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    const prio = { high: 0, normal: 1, low: 2 };
+    if (prio[a.priority] !== prio[b.priority]) return prio[a.priority] - prio[b.priority];
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return 0;
+  });
+  visible.forEach(t => list.appendChild(renderTodoItem(t)));
+  const remaining = visible.filter(t => !t.completed).length;
+  document.getElementById('todoMeta').textContent = visible.length === 0 ? '' : `残り ${remaining}件`;
+}
+
+function renderTodoItem(t) {
+  const li = document.createElement('li');
+  li.className = 'item' + (t.completed ? ' done' : '');
+  const dueLabel = t.dueDate ? dueDateLabel(t.dueDate, t.completed) : '';
+  const isOverdue = !t.completed && t.dueDate && t.dueDate < todayStr();
+  const priorityBadge = t.priority !== 'normal'
+    ? `<span class="badge-priority ${t.priority}">${t.priority === 'high' ? '高' : '低'}</span>` : '';
+  li.innerHTML = `
+    <button class="check ${t.completed ? 'done' : ''}" aria-label="完了切替"></button>
+    <div class="item-body">
+      <div class="item-title">${escapeHtml(t.title)}</div>
+      <div class="item-meta">
+        ${priorityBadge}
+        ${dueLabel ? `<span class="badge-due ${isOverdue ? 'overdue' : ''}">${dueLabel}</span>` : ''}
+      </div>
+    </div>
+    <button class="item-action" aria-label="削除" title="削除">×</button>
+  `;
+  li.querySelector('.check').addEventListener('click', () => toggleTodo(t.id));
+  li.querySelector('.item-action').addEventListener('click', () => deleteTodo(t.id));
+  return li;
+}
+
+function dueDateLabel(due, completed) {
+  const today = todayStr();
+  if (due === today) return '今日';
+  if (due < today) return completed ? due : `${due} (期限切れ)`;
+  const d1 = new Date(due);
+  const d2 = new Date(today);
+  const diff = Math.round((d1 - d2) / (1000 * 60 * 60 * 24));
+  if (diff === 1) return '明日';
+  if (diff <= 7) return `${diff}日後`;
+  return due;
+}
+
+function renderManageRoutines() {
+  const list = document.getElementById('manageRoutines');
+  list.innerHTML = '';
+  data.routines.forEach(r => {
+    const streak = getRoutineStreak(r.id);
+    const longest = getRoutineLongestStreak(r.id);
+    const li = document.createElement('li');
+    li.className = 'item';
+    li.innerHTML = `
+      <div class="emoji-badge">${escapeHtml(r.emoji || '✓')}</div>
+      <div class="item-body">
+        <div class="item-title">${escapeHtml(r.name)}</div>
+        <div class="item-meta">
+          <span class="badge-streak ${streak === 0 ? 'zero' : ''}">
+            ${streak > 0 ? '🔥' : ''} 現在 ${streak}日連続
+          </span>
+          <span>最長 ${longest}日</span>
+        </div>
+      </div>
+      <button class="item-action" aria-label="削除">×</button>
+    `;
+    li.querySelector('.item-action').addEventListener('click', () => deleteRoutine(r.id));
+    list.appendChild(li);
+  });
+}
+
+let currentFilter = 'active';
+function renderManageTodos() {
+  const list = document.getElementById('manageTodos');
+  list.innerHTML = '';
+  let todos = [...data.todos];
+  if (currentFilter === 'active') todos = todos.filter(t => !t.completed);
+  if (currentFilter === 'done') todos = todos.filter(t => t.completed);
+  todos.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    const prio = { high: 0, normal: 1, low: 2 };
+    if (prio[a.priority] !== prio[b.priority]) return prio[a.priority] - prio[b.priority];
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+  todos.forEach(t => list.appendChild(renderTodoItem(t)));
+}
+
+// Gym
+function renderGym() {
+  // Summary
+  document.getElementById('gymTodaySets').textContent = getTodaySets().length;
+  document.getElementById('gymStreak').textContent = getWorkoutCountThisWeek();
+  document.getElementById('gymTotal').textContent = getWorkoutDates().length;
+
+  // Exercise select
+  const select = document.getElementById('gymExercise');
+  const prevValue = select.value;
+  select.innerHTML = '<option value="">エクササイズを選択</option>';
+  data.gym.exercises.forEach(ex => {
+    const opt = document.createElement('option');
+    opt.value = ex.id;
+    opt.textContent = ex.name;
+    select.appendChild(opt);
+  });
+  if (prevValue && data.gym.exercises.find(e => e.id === prevValue)) select.value = prevValue;
+
+  // Today's session
+  const sessionBlock = document.getElementById('todaySession');
+  const today = todayStr();
+  document.getElementById('gymSessionDate').textContent = formatDateJP(new Date());
+  const todaySets = getTodaySets();
+  if (todaySets.length === 0) {
+    sessionBlock.innerHTML = '<div class="session-empty">本日まだ記録はありません。上のフォームから1セット記録してみてください。</div>';
+  } else {
+    sessionBlock.innerHTML = '';
+    const grouped = {};
+    todaySets.forEach(s => {
+      if (!grouped[s.exerciseId]) grouped[s.exerciseId] = [];
+      grouped[s.exerciseId].push(s);
+    });
+    for (const exId in grouped) {
+      const ex = data.gym.exercises.find(e => e.id === exId);
+      if (!ex) continue;
+      const sets = grouped[exId].sort((a, b) => a.timestamp - b.timestamp);
+      const totalReps = sets.reduce((a, s) => a + s.reps, 0);
+      const totalVolume = sets.reduce((a, s) => a + s.reps * s.weight, 0);
+      const group = document.createElement('div');
+      group.className = 'session-group';
+      group.innerHTML = `
+        <div class="session-group-head">
+          <div class="session-exercise-name">${escapeHtml(ex.name)}</div>
+          <div class="session-totals">${sets.length}セット / ${totalReps}回 / ${formatVolume(totalVolume)}kg総量</div>
+        </div>
+        <div class="set-chips"></div>
+      `;
+      const chips = group.querySelector('.set-chips');
+      sets.forEach((s, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'set-chip';
+        chip.innerHTML = `<span class="set-chip-num">${idx + 1}</span> ${formatWeight(s.weight)}kg × ${s.reps}<button aria-label="削除">×</button>`;
+        chip.querySelector('button').addEventListener('click', () => deleteSet(s.id));
+        chips.appendChild(chip);
+      });
+      sessionBlock.appendChild(group);
+    }
+  }
+
+  // Exercise list
+  const exList = document.getElementById('exerciseList');
+  exList.innerHTML = '';
+  data.gym.exercises.forEach(ex => {
+    const stats = getExerciseStats(ex.id);
+    const li = document.createElement('li');
+    li.className = 'item exercise-item';
+    const lastInfo = stats
+      ? `<span class="exercise-stat">前回 ${formatDateShort(stats.lastDate)} ・ ${stats.lastSets.length}セット</span>`
+      : '<span>記録なし</span>';
+    const prInfo = stats
+      ? `<span class="exercise-stat pr">PR ${formatWeight(stats.pr.weight)}kg × ${stats.pr.reps}</span>`
+      : '';
+    const catLabel = ex.category === 'cardio' ? '有酸素' : ex.category === 'other' ? 'その他' : '筋トレ';
+    li.innerHTML = `
+      <div class="emoji-badge">${ex.category === 'cardio' ? '🏃' : ex.category === 'other' ? '⚙️' : '💪'}</div>
+      <div class="item-body">
+        <div class="item-title">${escapeHtml(ex.name)}</div>
+        <div class="item-meta">
+          <span>${catLabel}</span>
+          ${lastInfo}
+          ${prInfo}
+        </div>
+      </div>
+      <button class="item-action" aria-label="削除">×</button>
+    `;
+    li.querySelector('.item-action').addEventListener('click', () => deleteExercise(ex.id));
+    exList.appendChild(li);
+  });
+}
+
+function formatWeight(w) {
+  return w % 1 === 0 ? String(w) : w.toFixed(1);
+}
+function formatVolume(v) {
+  return v % 1 === 0 ? String(v) : v.toFixed(1);
+}
+function formatDateShort(s) {
+  // s is YYYY-MM-DD
+  const [y, m, d] = s.split('-');
+  return `${parseInt(m)}/${parseInt(d)}`;
+}
+
+// Journal
+let journalSaveTimer;
+let journalCurrentMood = null;
+let journalCurrentEnergy = null;
+
+function renderJournal() {
+  const todayKey = todayStr();
+  const entry = data.journal.entries[todayKey] || { mood: null, energy: null, text: '' };
+
+  // Load values into editor
+  journalCurrentMood = entry.mood || null;
+  journalCurrentEnergy = entry.energy || null;
+  document.getElementById('journalText').value = entry.text || '';
+
+  document.querySelectorAll('.mood-pick').forEach(b => {
+    b.classList.toggle('selected', Number(b.dataset.mood) === journalCurrentMood);
+  });
+  document.querySelectorAll('.energy-pick').forEach(b => {
+    const lv = Number(b.dataset.energy);
+    b.classList.toggle('selected', journalCurrentEnergy !== null && lv <= journalCurrentEnergy);
+  });
+
+  // Counts
+  document.getElementById('journalCount').textContent = getJournalEntryCount();
+  document.getElementById('journalStreakText').textContent = getJournalStreak();
+
+  // Past entries
+  const list = document.getElementById('journalList');
+  list.innerHTML = '';
+  const keys = Object.keys(data.journal.entries)
+    .filter(k => k !== todayKey)
+    .sort()
+    .reverse();
+  keys.forEach(key => {
+    const e = data.journal.entries[key];
+    if (!e || (!e.text?.trim() && !e.mood && !e.energy)) return;
+    const li = document.createElement('li');
+    li.className = 'journal-entry';
+    const moodEmoji = ['', '😞','😕','😐','🙂','😄'][e.mood || 0] || '';
+    const energyDots = [1,2,3,4,5].map(n => `<span class="${e.energy && n <= e.energy ? 'on' : ''}"></span>`).join('');
+    li.innerHTML = `
+      <div class="journal-entry-head">
+        <span class="journal-entry-date">${formatJournalDate(key)}</span>
+        <span class="journal-entry-mood">${moodEmoji}</span>
+        <span class="journal-entry-energy">${energyDots}</span>
+      </div>
+      <div class="journal-entry-text">${escapeHtml(e.text || '(本文なし)')}</div>
+    `;
+    li.addEventListener('click', () => li.classList.toggle('expanded'));
+    list.appendChild(li);
+  });
+}
+
+function formatJournalDate(key) {
+  const [y, m, d] = key.split('-');
+  const today = new Date();
+  const dt = new Date(key);
+  const isThisYear = today.getFullYear() === parseInt(y);
+  if (isThisYear) return `${parseInt(m)}月${parseInt(d)}日`;
+  return `${y}/${parseInt(m)}/${parseInt(d)}`;
+}
+
+function renderStats() {
+  document.getElementById('weekRate').textContent = Math.round(getPeriodRate(7) * 100) + '%';
+  document.getElementById('monthRate').textContent = Math.round(getPeriodRate(30) * 100) + '%';
+  document.getElementById('perfectDays').textContent = getPerfectDays();
+  document.getElementById('activeRoutines').textContent = data.routines.length;
+
+  const lifetimeRate = getTodoLifetimeRate();
+  document.getElementById('todoLifetimeRate').textContent = lifetimeRate === null ? '—' : Math.round(lifetimeRate * 100) + '%';
+  document.getElementById('todoDoneCount').textContent = getTodoDoneCount();
+  document.getElementById('gymSessionsStat').textContent = getWorkoutDates().length;
+  document.getElementById('journalStreakStat').textContent = getJournalStreak();
+
+  const sList = document.getElementById('streakList');
+  sList.innerHTML = '';
+  if (data.routines.length === 0) {
+    sList.innerHTML = '<li style="justify-content:center;color:var(--ink-mute);font-size:13px;">ルーティンを追加すると表示されます</li>';
+  } else {
+    const maxStreak = Math.max(1, ...data.routines.map(r => getRoutineStreak(r.id)));
+    data.routines.forEach(r => {
+      const streak = getRoutineStreak(r.id);
+      const longest = getRoutineLongestStreak(r.id);
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div class="emoji-badge">${escapeHtml(r.emoji || '✓')}</div>
+        <div class="streak-name">${escapeHtml(r.name)}</div>
+        <div class="streak-bar"><div class="streak-bar-fill" style="width:${(streak / maxStreak) * 100}%"></div></div>
+        <div class="streak-val ${streak === 0 ? 'zero' : ''}">${streak}日 / 最長${longest}</div>
+      `;
+      sList.appendChild(li);
+    });
+  }
+
+  const bList = document.getElementById('badges');
+  bList.innerHTML = '';
+  BADGE_DEFS.forEach(b => {
+    const earned = data.earnedBadges.includes(b.id);
+    const div = document.createElement('div');
+    div.className = 'badge' + (earned ? ' earned' : '');
+    div.innerHTML = `
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-name">${escapeHtml(b.name)}</div>
+      <div class="badge-desc">${escapeHtml(b.desc)}</div>
+    `;
+    bList.appendChild(div);
+  });
+}
+
+function renderAll() {
+  renderTopbar();
+  renderStrip();
+  renderEncouragement();
+  renderTodayRoutines();
+  renderTodayTodos();
+  renderManageRoutines();
+  renderManageTodos();
+  renderGym();
+  renderJournal();
+  renderStats();
+}
+
+// ============================================================
+// Actions
+// ============================================================
+async function toggleRoutineForToday(routineId) {
+  const key = todayStr();
+  if (!data.completions[key]) data.completions[key] = [];
+  const idx = data.completions[key].indexOf(routineId);
+  let justCompleted = false;
+  if (idx >= 0) data.completions[key].splice(idx, 1);
+  else { data.completions[key].push(routineId); justCompleted = true; }
+  const newBadges = checkBadges();
+  await saveData();
+  renderAll();
+  if (justCompleted) {
+    const streak = getRoutineStreak(routineId);
+    if (streak === 1) showToast('はじまりの1日');
+    else if (streak === 3) showToast('3日継続 🔥');
+    else if (streak === 7) showToast('1週間継続 ⭐');
+    else if (streak === 30) showToast('30日継続 🏆');
+    else if (streak === 100) showToast('100日継続 💎');
+    else if (streak > 0 && streak % 50 === 0) showToast(`${streak}日継続`);
+  }
+  for (const b of newBadges) setTimeout(() => showToast(`${b.icon} ${b.name} を獲得`), 300);
+}
+
+async function toggleTodo(todoId) {
+  const t = data.todos.find(x => x.id === todoId);
+  if (!t) return;
+  t.completed = !t.completed;
+  t.completedAt = t.completed ? new Date().toISOString() : null;
+  const newBadges = checkBadges();
+  await saveData();
+  renderAll();
+  for (const b of newBadges) setTimeout(() => showToast(`${b.icon} ${b.name} を獲得`), 300);
+}
+
+async function deleteTodo(todoId) {
+  data.todos = data.todos.filter(t => t.id !== todoId);
+  await saveData();
+  renderAll();
+}
+
+async function deleteRoutine(routineId) {
+  if (!confirm('このルーティンと、関連する記録を削除します。よろしいですか？')) return;
+  data.routines = data.routines.filter(r => r.id !== routineId);
+  for (const key in data.completions) {
+    data.completions[key] = (data.completions[key] || []).filter(id => id !== routineId);
+  }
+  await saveData();
+  renderAll();
+}
+
+async function addRoutine(name, emoji) {
+  if (!name.trim()) return;
+  data.routines.push({
+    id: uid(),
+    name: name.trim(),
+    emoji: emoji.trim() || '✓',
+    createdAt: new Date().toISOString()
+  });
+  await saveData();
+  renderAll();
+}
+
+async function addTodo(title, dueDate, priority) {
+  if (!title.trim()) return;
+  data.todos.push({
+    id: uid(),
+    title: title.trim(),
+    dueDate: dueDate || null,
+    priority: priority || 'normal',
+    completed: false,
+    completedAt: null,
+    createdAt: new Date().toISOString()
+  });
+  await saveData();
+  renderAll();
+}
+
+// Gym actions
+async function addExercise(name, category) {
+  if (!name.trim()) return;
+  data.gym.exercises.push({
+    id: uid(),
+    name: name.trim(),
+    category: category || 'strength',
+    createdAt: new Date().toISOString()
+  });
+  await saveData();
+  renderGym();
+}
+
+async function deleteExercise(exerciseId) {
+  if (!confirm('このエクササイズと、関連する記録を削除します。よろしいですか？')) return;
+  data.gym.exercises = data.gym.exercises.filter(e => e.id !== exerciseId);
+  data.gym.sets = data.gym.sets.filter(s => s.exerciseId !== exerciseId);
+  await saveData();
+  renderAll();
+}
+
+async function logSet(exerciseId, weight, reps) {
+  data.gym.sets.push({
+    id: uid(),
+    exerciseId,
+    weight: Number(weight),
+    reps: Number(reps),
+    date: todayStr(),
+    timestamp: Date.now()
+  });
+  const newBadges = checkBadges();
+  await saveData();
+  renderAll();
+  for (const b of newBadges) setTimeout(() => showToast(`${b.icon} ${b.name} を獲得`), 300);
+}
+
+async function deleteSet(setId) {
+  data.gym.sets = data.gym.sets.filter(s => s.id !== setId);
+  await saveData();
+  renderAll();
+}
+
+// Journal actions
+async function saveJournalEntry(silent = false) {
+  const todayKey = todayStr();
+  const text = document.getElementById('journalText').value;
+  const hasAny = text.trim() || journalCurrentMood || journalCurrentEnergy;
+  if (!hasAny) {
+    delete data.journal.entries[todayKey];
+  } else {
+    data.journal.entries[todayKey] = {
+      mood: journalCurrentMood,
+      energy: journalCurrentEnergy,
+      text,
+      updatedAt: new Date().toISOString()
+    };
+  }
+  const newBadges = checkBadges();
+  await saveData();
+  if (!silent) {
+    document.getElementById('journalSavedHint').textContent = '保存済';
+    setTimeout(() => {
+      if (document.getElementById('journalSavedHint')) document.getElementById('journalSavedHint').textContent = '';
+    }, 1500);
+  }
+  for (const b of newBadges) setTimeout(() => showToast(`${b.icon} ${b.name} を獲得`), 300);
+  renderTopbar();
+  renderStrip();
+}
+
+function scheduleJournalSave() {
+  document.getElementById('journalSavedHint').textContent = '保存中…';
+  clearTimeout(journalSaveTimer);
+  journalSaveTimer = setTimeout(() => saveJournalEntry(false), 800);
+}
+
+async function resetAll() {
+  if (!confirm('すべてのデータを削除します。元に戻せません。本当に実行しますか？')) return;
+  data = JSON.parse(JSON.stringify(defaultData));
+  try { await window.storage.delete(STORAGE_KEY); } catch (e) {}
+  renderAll();
+  showToast('リセットしました');
+}
+
+// ============================================================
+// Helpers
+// ============================================================
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+let toastTimeout;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ============================================================
+// Wiring
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    document.querySelectorAll('.panel').forEach(p => {
+      p.classList.toggle('hidden', p.dataset.panel !== target);
+    });
+  });
+});
+
+document.getElementById('routineForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await addRoutine(document.getElementById('routineName').value, document.getElementById('routineEmoji').value);
+  document.getElementById('routineName').value = '';
+  document.getElementById('routineEmoji').value = '';
+});
+
+document.getElementById('todoForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await addTodo(
+    document.getElementById('todoTitle').value,
+    document.getElementById('todoDue').value,
+    document.getElementById('todoPriority').value
+  );
+  document.getElementById('todoTitle').value = '';
+  document.getElementById('todoDue').value = '';
+  document.getElementById('todoPriority').value = 'normal';
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderManageTodos();
+  });
+});
+
+// Gym form
+document.getElementById('gymForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const exId = document.getElementById('gymExercise').value;
+  const w = document.getElementById('gymWeight').value;
+  const r = document.getElementById('gymReps').value;
+  if (!exId) { showToast('エクササイズを選択してください'); return; }
+  if (!w || !r) return;
+  await logSet(exId, w, r);
+  document.getElementById('gymWeight').value = '';
+  document.getElementById('gymReps').value = '';
+  document.getElementById('gymWeight').focus();
+});
+
+document.getElementById('exerciseForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await addExercise(
+    document.getElementById('exerciseName').value,
+    document.getElementById('exerciseCategory').value
+  );
+  document.getElementById('exerciseName').value = '';
+});
+
+// Journal pickers
+document.querySelectorAll('.mood-pick').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const m = Number(btn.dataset.mood);
+    journalCurrentMood = journalCurrentMood === m ? null : m;
+    document.querySelectorAll('.mood-pick').forEach(b => {
+      b.classList.toggle('selected', Number(b.dataset.mood) === journalCurrentMood);
+    });
+    scheduleJournalSave();
+  });
+});
+
+document.querySelectorAll('.energy-pick').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const e = Number(btn.dataset.energy);
+    journalCurrentEnergy = journalCurrentEnergy === e ? null : e;
+    document.querySelectorAll('.energy-pick').forEach(b => {
+      const lv = Number(b.dataset.energy);
+      b.classList.toggle('selected', journalCurrentEnergy !== null && lv <= journalCurrentEnergy);
+    });
+    scheduleJournalSave();
+  });
+});
+
+document.getElementById('journalText').addEventListener('input', scheduleJournalSave);
+document.getElementById('journalText').addEventListener('blur', () => {
+  clearTimeout(journalSaveTimer);
+  saveJournalEntry(false);
+});
+
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+
+// ============================================================
+// Init
+// ============================================================
+(async function init() {
+  await loadData();
+
+  // First-run seeding only if everything is empty
+  const isFirstRun = data.routines.length === 0
+    && data.todos.length === 0
+    && Object.keys(data.completions).length === 0
+    && data.gym.exercises.length === 0
+    && Object.keys(data.journal.entries).length === 0;
+
+  if (isFirstRun) {
+    data.routines = [
+      { id: uid(), name: '読書 15分', emoji: '📖', createdAt: new Date().toISOString() },
+      { id: uid(), name: '運動 / ストレッチ', emoji: '🏃', createdAt: new Date().toISOString() },
+      { id: uid(), name: '日記を書く', emoji: '✏️', createdAt: new Date().toISOString() },
+    ];
+    data.gym.exercises = [
+      { id: uid(), name: 'ベンチプレス', category: 'strength', createdAt: new Date().toISOString() },
+      { id: uid(), name: 'スクワット', category: 'strength', createdAt: new Date().toISOString() },
+      { id: uid(), name: 'デッドリフト', category: 'strength', createdAt: new Date().toISOString() },
+    ];
+    await saveData();
+  }
+
+  renderAll();
+})();
+</script>
