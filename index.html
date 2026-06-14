@@ -1203,9 +1203,9 @@ function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toS
 
 async function loadData() {
   try {
-    const result = await window.storage.get(STORAGE_KEY);
-    if (result && result.value) {
-      const parsed = JSON.parse(result.value);
+    const result = localStorage.getItem(STORAGE_KEY);
+    if (result) {
+      const parsed = JSON.parse(result);
       data = { ...defaultData, ...parsed };
       if (!data.completions) data.completions = {};
       if (!data.routines) data.routines = [];
@@ -1222,7 +1222,7 @@ async function loadData() {
 
 async function saveData() {
   try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
     console.error('Storage save failed', e);
     showToast('保存に失敗しました');
@@ -2053,7 +2053,7 @@ function scheduleJournalSave() {
 async function resetAll() {
   if (!confirm('すべてのデータを削除します。元に戻せません。本当に実行しますか？')) return;
   data = JSON.parse(JSON.stringify(defaultData));
-  try { await window.storage.delete(STORAGE_KEY); } catch (e) {}
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   renderAll();
   showToast('リセットしました');
 }
