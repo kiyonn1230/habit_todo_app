@@ -1,5 +1,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <div id="app">
+  <button id="headerThemeToggle" class="header-theme-toggle" aria-label="テーマ切り替え" title="テーマ切り替え">🌙</button>
   <header class="topbar">
     <div class="topbar-left">
       <div class="weekday" id="weekday">—</div>
@@ -100,6 +101,7 @@
       <input type="text" id="routineEmoji" placeholder="🌱" maxlength="2" />
       <button type="submit">追加</button>
     </form>
+    <div class="manage-hint">⠿ 長押しで並び替え ・ タップで曜日/タグ/リマインダーを設定</div>
     <ul class="list manage-list" id="manageRoutines"></ul>
   </section>
 
@@ -113,6 +115,9 @@
         <option value="high">高</option>
         <option value="low">低</option>
       </select>
+      <select id="todoTag">
+        <option value="">タグなし</option>
+      </select>
       <button type="submit">追加</button>
     </form>
     <div class="todo-filter">
@@ -120,6 +125,8 @@
       <button class="filter-btn" data-filter="all">すべて</button>
       <button class="filter-btn" data-filter="done">完了済</button>
     </div>
+    <div class="tag-filter" id="todoTagFilter"></div>
+    <div class="manage-hint">⠿ 長押しで並び替え ・ タップで編集</div>
     <ul class="list manage-list" id="manageTodos"></ul>
   </section>
 
@@ -251,6 +258,27 @@
     </div>
 
     <div class="section">
+      <div class="section-head">
+        <h2>カレンダー</h2>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" id="calPrev" aria-label="前の月">‹</button>
+          <span class="cal-label" id="calLabel">—</span>
+          <button class="cal-nav-btn" id="calNext" aria-label="次の月">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span>少</span>
+        <span class="legend-cell l0"></span>
+        <span class="legend-cell l1"></span>
+        <span class="legend-cell l2"></span>
+        <span class="legend-cell l3"></span>
+        <span class="legend-cell l4"></span>
+        <span>多</span>
+      </div>
+    </div>
+
+    <div class="section">
       <div class="section-head"><h2>ルーティン別の継続記録</h2></div>
       <ul class="streak-list" id="streakList"></ul>
     </div>
@@ -260,11 +288,62 @@
       <div class="badges" id="badges"></div>
     </div>
 
+    <div class="section">
+      <div class="section-head"><h2>テーマ</h2></div>
+      <div class="settings-card">
+        <button class="settings-btn" id="themeToggleBtn">🌙 ダークモードにする</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>タグ</h2></div>
+      <form class="add-form sub-form" id="tagForm">
+        <input type="text" id="tagName" placeholder="新しいタグ (例: 健康)" maxlength="16" required />
+        <input type="color" id="tagColor" value="#4A4E9A" aria-label="タグの色" />
+        <button type="submit">追加</button>
+      </form>
+      <ul class="tag-list" id="tagList"></ul>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>通知</h2></div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <span class="settings-text" id="notifStatus">未許可</span>
+          <button class="settings-btn" id="notifBtn">通知を許可する</button>
+        </div>
+        <p class="settings-note">各ルーティンの「リマインダー」を設定すると、指定時刻に通知します。アプリを開いている間のみ動作する擬似リマインダーです。</p>
+      </div>
+    </div>
+
     <div class="section danger-zone">
       <div class="section-head"><h2>データ</h2></div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <button class="settings-btn" id="exportBtn">バックアップを書き出す</button>
+          <button class="settings-btn" id="importBtn">バックアップから復元</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <p class="settings-note">現在のデータをJSONファイルとして保存／読み込みできます。機種変更時のお引っ越しに。</p>
+      </div>
       <button class="danger-btn" id="resetBtn">すべてリセット</button>
     </div>
   </section>
+
+  <!-- MODAL -->
+  <div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="modalTitle">設定</h3>
+        <button class="modal-close" id="modalClose" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot">
+        <button class="modal-btn ghost" id="modalCancel">キャンセル</button>
+        <button class="modal-btn primary" id="modalSave">保存</button>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast"></div>
 </div>
@@ -1166,6 +1245,447 @@
   .tab { padding: 10px 10px; font-size: 13px; }
   body { background: linear-gradient(180deg, #EFEDE6 0%, #E7E4DA 100%); min-height: 100vh; }
 
+  /* ============================================================
+     Added features
+     ============================================================ */
+  #app { position: relative; }
+
+  .header-theme-toggle {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s, background 0.15s;
+  }
+  .header-theme-toggle:hover { background: var(--surface-sunk); }
+  .header-theme-toggle:active { transform: scale(0.92); }
+
+  /* Tag chips */
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--tag-color, var(--ink-soft));
+    background: color-mix(in srgb, var(--tag-color, #888) 15%, transparent);
+  }
+  .tag-chip::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--tag-color, var(--ink-mute));
+  }
+  .badge-days {
+    color: var(--ink-soft);
+    background: var(--surface-sunk);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
+  }
+  .badge-reminder { color: var(--indigo); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .badge-skip { color: var(--ink-mute); font-style: italic; }
+
+  /* Skip / pause */
+  .skip-action { font-size: 15px; }
+  .skip-action.on { color: var(--indigo); }
+  .skip-action:hover { color: var(--indigo); background: var(--surface-sunk); }
+  .item.skipped { opacity: 0.55; }
+  .item.skipped .item-title { text-decoration: none; }
+
+  /* Drag-to-reorder */
+  .manage-hint {
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+  .drag-handle {
+    flex-shrink: 0;
+    color: var(--ink-mute);
+    font-size: 16px;
+    line-height: 1;
+    cursor: grab;
+    letter-spacing: -2px;
+    user-select: none;
+  }
+  .item.draggable { touch-action: pan-y; }
+  .item.dragging {
+    background: var(--surface-sunk);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    opacity: 0.96;
+  }
+  .list.reordering { cursor: grabbing; }
+  .list.reordering .item { transition: none; }
+
+  /* Tag filter row */
+  .tag-filter {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .tag-filter:empty { display: none; }
+  .tag-filter-btn {
+    background: none;
+    border: 1px solid var(--line);
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .tag-filter-btn.has-color::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--tag-color);
+  }
+  .tag-filter-btn:hover { border-color: var(--ink-soft); }
+  .tag-filter-btn.active {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  #todoTag { flex: 0 0 auto; }
+
+  /* Calendar */
+  .cal-nav { display: flex; align-items: center; gap: 10px; }
+  .cal-nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    width: 28px; height: 28px;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .cal-nav-btn:hover { background: var(--surface-sunk); color: var(--ink); }
+  .cal-label {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 84px;
+    text-align: center;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px;
+    box-shadow: var(--shadow);
+  }
+  .cal-head {
+    text-align: center;
+    font-size: 10px;
+    color: var(--ink-mute);
+    font-weight: 600;
+    padding-bottom: 2px;
+  }
+  .cal-head.sun { color: #C2613F; }
+  .cal-head.sat { color: var(--indigo); }
+  .cal-cell {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    background: var(--heat-0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    position: relative;
+  }
+  .cal-cell.empty { background: transparent; }
+  .cal-cell.l1 { background: var(--heat-1); }
+  .cal-cell.l2 { background: var(--heat-2); }
+  .cal-cell.l3 { background: var(--heat-3); }
+  .cal-cell.l4 { background: var(--heat-4); }
+  .cal-cell.today { outline: 2px solid var(--ink); outline-offset: -1px; }
+  .cal-day { font-weight: 600; color: var(--ink); line-height: 1; }
+  .cal-cell.l3 .cal-day, .cal-cell.l4 .cal-day { color: #fff; }
+  .cal-frac {
+    font-size: 8px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    margin-top: 1px;
+  }
+  .cal-cell.l3 .cal-frac, .cal-cell.l4 .cal-frac { color: rgba(255,255,255,0.85); }
+  .cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-top: 8px;
+  }
+
+  /* Settings cards */
+  .settings-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .settings-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .settings-text { font-size: 13px; color: var(--ink-soft); flex: 1; min-width: 120px; }
+  .settings-btn {
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .settings-btn:hover { opacity: 0.85; }
+  .settings-btn:disabled { opacity: 0.4; cursor: default; }
+  .settings-note {
+    font-size: 11px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+    margin: 12px 0 0;
+  }
+
+  /* Tag manager */
+  #tagColor {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 38px;
+    padding: 4px;
+    cursor: pointer;
+  }
+  .tag-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .tag-list:empty { display: none; }
+  .tag-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .tag-row:last-child { border-bottom: none; }
+  .tag-empty { padding: 16px; text-align: center; color: var(--ink-mute); font-size: 13px; }
+  .tag-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .tag-row-name { flex: 1; font-size: 14px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,22,28,0.45);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 200;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--surface);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 20px 20px 0 0;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(30px); } to { transform: none; } }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .modal-head h3 { margin: 0; font-size: 16px; font-weight: 600; font-family: var(--font-display); }
+  .modal-close {
+    background: none; border: none; font-size: 22px; line-height: 1;
+    color: var(--ink-mute); cursor: pointer; padding: 0 4px;
+  }
+  .modal-body { padding: 16px 18px; overflow-y: auto; }
+  .modal-foot {
+    display: flex;
+    gap: 10px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .modal-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    border: 1px solid var(--line);
+  }
+  .modal-btn.ghost { background: var(--surface); color: var(--ink-soft); }
+  .modal-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .modal-form { display: flex; flex-direction: column; gap: 16px; }
+  .modal-field { display: flex; flex-direction: column; gap: 6px; }
+  .modal-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; letter-spacing: 0.03em; }
+  .modal-field input[type="text"],
+  .modal-field input[type="date"],
+  .modal-field input[type="time"],
+  .modal-field select {
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .modal-field input:focus, .modal-field select:focus { outline: none; border-color: var(--ink-soft); }
+  .emoji-input { width: 70px; text-align: center; font-size: 18px; }
+  .modal-hint { font-size: 11px; color: var(--ink-mute); line-height: 1.4; }
+
+  .day-select { display: flex; gap: 6px; }
+  .day-pill {
+    flex: 1;
+    padding: 9px 0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .day-pill.sun { color: #C2613F; }
+  .day-pill.sat { color: var(--indigo); }
+  .day-pill.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  .tag-select { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag-option {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .tag-option.has-color::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--tag-color);
+  }
+  .tag-option.on {
+    border-color: var(--ink);
+    background: var(--surface-sunk);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .reminder-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .switch { position: relative; display: inline-block; width: 44px; height: 26px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-track {
+    position: absolute; inset: 0;
+    background: var(--line);
+    border-radius: 999px;
+    transition: background 0.2s;
+  }
+  .switch-track::before {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .switch-track { background: var(--done); }
+  .switch input:checked + .switch-track::before { transform: translateX(18px); }
+
+  /* ===== Dark theme ===== */
+  [data-theme="dark"] {
+    --bg: #15171C;
+    --surface: #1E2127;
+    --surface-sunk: #262A31;
+    --ink: #ECEEF2;
+    --ink-soft: #AEB4C0;
+    --ink-mute: #7C8290;
+    --line: #2E333C;
+    --line-soft: #24282F;
+    --done: #4FB286;
+    --done-soft: #1E3A30;
+    --fire: #F0764B;
+    --fire-soft: #3A241B;
+    --gold: #D6A95A;
+    --indigo: #8488E0;
+    --indigo-soft: #2A2C42;
+    --danger: #E06B6B;
+    --heat-0: #262A31;
+    --heat-1: #3A3320;
+    --heat-2: #6B5526;
+    --heat-3: #A6792F;
+    --heat-4: #D89A3C;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.3);
+  }
+  [data-theme="dark"] body { background: linear-gradient(180deg, #0E0F13 0%, #15171C 100%); }
+  [data-theme="dark"] .add-form button { background: var(--indigo); color: #fff; }
+  [data-theme="dark"] .add-form button:hover { background: #9a9ef0; }
+  [data-theme="dark"] .filter-btn.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+  [data-theme="dark"] .badge-priority.high { background: var(--fire-soft); color: var(--fire); }
+  [data-theme="dark"] .badge-priority.low { background: var(--surface-sunk); color: var(--ink-soft); }
+  [data-theme="dark"] .badge.earned { background: linear-gradient(135deg, #2A2418 0%, var(--surface) 100%); }
+  [data-theme="dark"] .toast { background: var(--surface-sunk); color: var(--ink); border: 1px solid var(--line); }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -1179,16 +1699,39 @@
 // Data
 // ============================================================
 const STORAGE_KEY = 'habit-todo-app-v1';
+const REMINDER_FIRED_KEY = 'habit-todo-reminders-fired';
 
 const defaultData = {
   routines: [],
   todos: [],
   completions: {},
+  skips: {},
+  tags: [],
   earnedBadges: [],
   gym: { exercises: [], sets: [] },
   journal: { entries: {} },
-  version: 2
+  settings: { theme: 'light', tagsInit: false },
+  version: 3
 };
+
+const DEFAULT_TAGS = [
+  { id: 'work', name: '仕事', color: '#4A4E9A' },
+  { id: 'private', name: 'プライベート', color: '#2F7758' },
+  { id: 'study', name: '勉強', color: '#D9542B' },
+];
+
+const WEEKDAY_SHORT = ['日', '月', '火', '水', '木', '金', '土'];
+
+// Apply persisted theme as early as possible to avoid a flash of the wrong theme.
+try {
+  const _raw = localStorage.getItem(STORAGE_KEY);
+  if (_raw) {
+    const _p = JSON.parse(_raw);
+    if (_p && _p.settings && _p.settings.theme === 'dark') {
+      document.documentElement.dataset.theme = 'dark';
+    }
+  }
+} catch (e) { /* ignore */ }
 
 let data = JSON.parse(JSON.stringify(defaultData));
 
@@ -1206,18 +1749,46 @@ async function loadData() {
     const result = localStorage.getItem(STORAGE_KEY);
     if (result) {
       const parsed = JSON.parse(result);
-      data = { ...defaultData, ...parsed };
-      if (!data.completions) data.completions = {};
-      if (!data.routines) data.routines = [];
-      if (!data.todos) data.todos = [];
-      if (!data.earnedBadges) data.earnedBadges = [];
-      if (!data.gym) data.gym = { exercises: [], sets: [] };
-      if (!data.gym.exercises) data.gym.exercises = [];
-      if (!data.gym.sets) data.gym.sets = [];
-      if (!data.journal) data.journal = { entries: {} };
-      if (!data.journal.entries) data.journal.entries = {};
+      data = { ...JSON.parse(JSON.stringify(defaultData)), ...parsed };
     }
   } catch (e) { /* first run */ }
+  normalizeData();
+}
+
+// Backfill any missing structures so older saves (and imported backups) stay valid.
+function normalizeData() {
+  if (!data.completions) data.completions = {};
+  if (!Array.isArray(data.routines)) data.routines = [];
+  if (!Array.isArray(data.todos)) data.todos = [];
+  if (!data.skips || typeof data.skips !== 'object') data.skips = {};
+  if (!Array.isArray(data.tags)) data.tags = [];
+  if (!Array.isArray(data.earnedBadges)) data.earnedBadges = [];
+  if (!data.gym) data.gym = { exercises: [], sets: [] };
+  if (!data.gym.exercises) data.gym.exercises = [];
+  if (!data.gym.sets) data.gym.sets = [];
+  if (!data.journal) data.journal = { entries: {} };
+  if (!data.journal.entries) data.journal.entries = {};
+  if (!data.settings || typeof data.settings !== 'object') data.settings = { theme: 'light', tagsInit: false };
+  if (data.settings.theme !== 'dark') data.settings.theme = 'light';
+
+  data.routines.forEach(r => {
+    if (!Array.isArray(r.days)) r.days = [];
+    if (r.tag === undefined) r.tag = null;
+    if (!r.reminder || typeof r.reminder !== 'object') r.reminder = { enabled: false, time: '21:00' };
+    if (typeof r.reminder.enabled !== 'boolean') r.reminder.enabled = false;
+    if (!r.reminder.time) r.reminder.time = '21:00';
+  });
+  data.todos.forEach(t => { if (t.tag === undefined) t.tag = null; });
+  // Drop tag references that no longer exist.
+  const tagIds = new Set(data.tags.map(t => t.id));
+  data.routines.forEach(r => { if (r.tag && !tagIds.has(r.tag)) r.tag = null; });
+  data.todos.forEach(t => { if (t.tag && !tagIds.has(t.tag)) t.tag = null; });
+
+  // Seed the starter tags exactly once, but respect a user who deletes them.
+  if (!data.settings.tagsInit) {
+    if (data.tags.length === 0) data.tags = JSON.parse(JSON.stringify(DEFAULT_TAGS));
+    data.settings.tagsInit = true;
+  }
 }
 
 async function saveData() {
@@ -1232,11 +1803,44 @@ async function saveData() {
 // ============================================================
 // Computations
 // ============================================================
+// --- Scheduling & skip helpers ---
+function weekdayOf(dStr) { return new Date(dStr + 'T00:00:00').getDay(); }
+
+// A routine with no specific days is considered "every day".
+function isScheduled(routine, weekday) {
+  if (!routine.days || routine.days.length === 0) return true;
+  return routine.days.includes(weekday);
+}
+function routinesForDate(dStr) {
+  const wd = weekdayOf(dStr);
+  return data.routines.filter(r => isScheduled(r, wd));
+}
+function isSkipped(routineId, dStr) {
+  return (data.skips[dStr] || []).includes(routineId);
+}
+// Routines that count toward a date's progress: scheduled that weekday and not skipped.
+function scheduledActiveForDate(dStr) {
+  return routinesForDate(dStr).filter(r => !isSkipped(r.id, dStr));
+}
+function completedScheduledForDate(dStr) {
+  const done = data.completions[dStr] || [];
+  return scheduledActiveForDate(dStr).filter(r => done.includes(r.id));
+}
+
+// Classify a day for streak purposes:
+//   'good'    — at least one scheduled routine completed
+//   'bad'     — scheduled routines remained but none were completed
+//   'neutral' — nothing scheduled / everything skipped (bridges the streak)
+function dayStatus(dStr) {
+  const active = scheduledActiveForDate(dStr);
+  if (active.length === 0) return 'neutral';
+  return completedScheduledForDate(dStr).length > 0 ? 'good' : 'bad';
+}
+
 function getCompletionRateForDate(dStr) {
-  const completed = (data.completions[dStr] || []).length;
-  const total = data.routines.length;
+  const total = scheduledActiveForDate(dStr).length;
   if (total === 0) return null;
-  return completed / total;
+  return completedScheduledForDate(dStr).length / total;
 }
 
 function getHeatLevel(rate) {
@@ -1253,27 +1857,32 @@ function getCurrentStreak() {
   let streak = 0;
   const d = new Date();
   for (let i = 0; i < 400; i++) {
-    const key = dateStr(d);
-    const completed = (data.completions[key] || []).length;
-    if (completed > 0) streak++;
-    else { if (i === 0) { d.setDate(d.getDate() - 1); continue; } break; }
+    const status = dayStatus(dateStr(d));
+    if (status === 'bad' && i !== 0) break; // today may still be incomplete
+    if (status === 'good') streak++;
     d.setDate(d.getDate() - 1);
   }
   return streak;
 }
 
+// Earliest date we have any record for — bounds the longest-streak walk.
+function earliestTrackedDate() {
+  const keys = [...Object.keys(data.completions), ...Object.keys(data.skips)].sort();
+  return keys.length ? keys[0] : null;
+}
+
 function getLongestStreak() {
-  const dates = Object.keys(data.completions)
-    .filter(k => (data.completions[k] || []).length > 0)
-    .sort();
-  if (dates.length === 0) return 0;
-  let longest = 1, current = 1;
-  for (let i = 1; i < dates.length; i++) {
-    const prev = new Date(dates[i - 1]);
-    const cur = new Date(dates[i]);
-    const diff = (cur - prev) / (1000 * 60 * 60 * 24);
-    if (diff === 1) { current++; longest = Math.max(longest, current); }
-    else current = 1;
+  const start = earliestTrackedDate();
+  if (!start) return 0;
+  let longest = 0, current = 0;
+  const d = new Date(start + 'T00:00:00');
+  const end = new Date();
+  while (d <= end) {
+    const status = dayStatus(dateStr(d));
+    if (status === 'good') { current++; longest = Math.max(longest, current); }
+    else if (status === 'bad') current = 0;
+    // neutral days bridge the streak
+    d.setDate(d.getDate() + 1);
   }
   return longest;
 }
@@ -1286,30 +1895,35 @@ function getTotalCompletions() {
 }
 
 function getRoutineStreak(routineId) {
+  const r = data.routines.find(x => x.id === routineId);
+  if (!r) return 0;
   let streak = 0;
   const d = new Date();
   for (let i = 0; i < 400; i++) {
     const key = dateStr(d);
     const completed = (data.completions[key] || []).includes(routineId);
     if (completed) streak++;
-    else { if (i === 0) { d.setDate(d.getDate() - 1); continue; } break; }
+    else if (isScheduled(r, d.getDay()) && !isSkipped(routineId, key) && i !== 0) break;
     d.setDate(d.getDate() - 1);
   }
   return streak;
 }
 
 function getRoutineLongestStreak(routineId) {
-  const dates = Object.keys(data.completions)
-    .filter(k => (data.completions[k] || []).includes(routineId))
-    .sort();
-  if (dates.length === 0) return 0;
-  let longest = 1, current = 1;
-  for (let i = 1; i < dates.length; i++) {
-    const prev = new Date(dates[i - 1]);
-    const cur = new Date(dates[i]);
-    const diff = (cur - prev) / (1000 * 60 * 60 * 24);
-    if (diff === 1) { current++; longest = Math.max(longest, current); }
-    else current = 1;
+  const r = data.routines.find(x => x.id === routineId);
+  if (!r) return 0;
+  const start = earliestTrackedDate();
+  if (!start) return 0;
+  let longest = 0, current = 0;
+  const d = new Date(start + 'T00:00:00');
+  const end = new Date();
+  while (d <= end) {
+    const key = dateStr(d);
+    const completed = (data.completions[key] || []).includes(routineId);
+    if (completed) { current++; longest = Math.max(longest, current); }
+    else if (isScheduled(r, d.getDay()) && !isSkipped(routineId, key)) current = 0;
+    // unscheduled or skipped days bridge the streak
+    d.setDate(d.getDate() + 1);
   }
   return longest;
 }
@@ -1320,8 +1934,8 @@ function getPeriodRate(days) {
   let totalSlots = 0, doneSlots = 0;
   for (let i = 0; i < days; i++) {
     const key = dateStr(d);
-    totalSlots += data.routines.length;
-    doneSlots += (data.completions[key] || []).length;
+    totalSlots += scheduledActiveForDate(key).length;
+    doneSlots += completedScheduledForDate(key).length;
     d.setDate(d.getDate() - 1);
   }
   return totalSlots === 0 ? 0 : doneSlots / totalSlots;
@@ -1331,9 +1945,25 @@ function getPerfectDays() {
   if (data.routines.length === 0) return 0;
   let count = 0;
   for (const key in data.completions) {
-    if ((data.completions[key] || []).length >= data.routines.length) count++;
+    const active = scheduledActiveForDate(key);
+    if (active.length === 0) continue;
+    const done = data.completions[key] || [];
+    if (active.every(r => done.includes(r.id))) count++;
   }
   return count;
+}
+
+// --- Tag helpers ---
+function getTag(tagId) { return data.tags.find(t => t.id === tagId) || null; }
+function tagChipHtml(tagId) {
+  const tag = getTag(tagId);
+  if (!tag) return '';
+  return `<span class="tag-chip" style="--tag-color:${escapeHtml(tag.color)}">${escapeHtml(tag.name)}</span>`;
+}
+function daysLabel(days) {
+  if (!days || days.length === 0) return '毎日';
+  if (days.length === 7) return '毎日';
+  return [...days].sort((a, b) => a - b).map(d => WEEKDAY_SHORT[d]).join('・');
 }
 
 // Todo computations
@@ -1472,9 +2102,9 @@ function renderTopbar() {
   document.getElementById('date').textContent = formatDateJP(now);
 
   const todayKey = todayStr();
-  // Routines ring
-  const rDone = (data.completions[todayKey] || []).length;
-  const rTotal = data.routines.length;
+  // Routines ring — only counts routines scheduled (and not skipped) today
+  const rDone = completedScheduledForDate(todayKey).length;
+  const rTotal = scheduledActiveForDate(todayKey).length;
   const rRate = rTotal === 0 ? 0 : rDone / rTotal;
   const circumference = 2 * Math.PI * 25;
   document.getElementById('ringFillR').setAttribute('stroke-dashoffset', circumference * (1 - rRate));
@@ -1498,10 +2128,10 @@ function renderStrip() {
     const level = getHeatLevel(rate);
     const cell = document.createElement('div');
     cell.className = `cell l${level}` + (i === 0 ? ' today' : '');
-    const completed = (data.completions[key] || []).length;
-    const total = data.routines.length;
+    const completed = completedScheduledForDate(key).length;
+    const total = scheduledActiveForDate(key).length;
     const dateLabel = `${d.getMonth() + 1}/${d.getDate()}`;
-    cell.title = total === 0 ? dateLabel : `${dateLabel} — ${completed}/${total}`;
+    cell.title = total === 0 ? `${dateLabel} — 予定なし` : `${dateLabel} — ${completed}/${total}`;
     strip.appendChild(cell);
   }
   document.getElementById('currentStreak').textContent = getCurrentStreak();
@@ -1513,13 +2143,15 @@ function renderEncouragement() {
   const el = document.getElementById('encouragement');
   el.className = 'encouragement';
   const todayKey = todayStr();
-  const completed = (data.completions[todayKey] || []).length;
-  const total = data.routines.length;
+  const completed = completedScheduledForDate(todayKey).length;
+  const total = scheduledActiveForDate(todayKey).length;
   const streak = getCurrentStreak();
 
   let html = '';
-  if (total === 0) {
+  if (data.routines.length === 0) {
     html = '右上の <strong>ルーティン</strong> タブから、毎日続けたい習慣を追加してください。記録はここに溜まっていきます。';
+  } else if (total === 0) {
+    html = '今日予定されているルーティンはありません。ゆっくり休んで、また明日。';
   } else if (completed === total) {
     el.classList.add('gold');
     html = `本日のルーティンをすべて達成しました。<strong>${streak}日連続</strong>です。`;
@@ -1547,30 +2179,40 @@ function renderTodayRoutines() {
   list.innerHTML = '';
   const todayKey = todayStr();
   const todayDone = data.completions[todayKey] || [];
+  const scheduled = routinesForDate(todayKey);
 
-  data.routines.forEach(r => {
+  scheduled.forEach(r => {
     const isDone = todayDone.includes(r.id);
+    const skipped = isSkipped(r.id, todayKey);
     const streak = getRoutineStreak(r.id);
     const li = document.createElement('li');
-    li.className = 'item' + (isDone ? ' done' : '');
+    li.className = 'item' + (isDone ? ' done' : '') + (skipped ? ' skipped' : '');
+    const reminderInfo = r.reminder && r.reminder.enabled
+      ? `<span class="badge-reminder">⏰ ${escapeHtml(r.reminder.time)}</span>` : '';
     li.innerHTML = `
-      <button class="check ${isDone ? 'done' : ''}" aria-label="達成切替"></button>
+      <button class="check ${isDone ? 'done' : ''}" aria-label="達成切替" ${skipped ? 'disabled' : ''}></button>
       <div class="emoji-badge">${escapeHtml(r.emoji || '✓')}</div>
       <div class="item-body">
         <div class="item-title">${escapeHtml(r.name)}</div>
         <div class="item-meta">
-          <span class="badge-streak ${streak === 0 ? 'zero' : ''}">
-            ${streak > 0 ? '🔥' : ''} ${streak}日連続
-          </span>
+          ${tagChipHtml(r.tag)}
+          ${skipped
+            ? '<span class="badge-skip">お休み中</span>'
+            : `<span class="badge-streak ${streak === 0 ? 'zero' : ''}">${streak > 0 ? '🔥' : ''} ${streak}日連続</span>`}
+          ${reminderInfo}
         </div>
       </div>
+      <button class="item-action skip-action ${skipped ? 'on' : ''}" aria-label="お休み切替" title="今日だけお休み">${skipped ? '↩︎' : '😴'}</button>
     `;
-    li.querySelector('.check').addEventListener('click', () => toggleRoutineForToday(r.id));
+    if (!skipped) li.querySelector('.check').addEventListener('click', () => toggleRoutineForToday(r.id));
+    li.querySelector('.skip-action').addEventListener('click', () => toggleSkipForToday(r.id));
     list.appendChild(li);
   });
 
+  const activeTotal = scheduledActiveForDate(todayKey).length;
+  const doneCount = completedScheduledForDate(todayKey).length;
   document.getElementById('routineMeta').textContent =
-    data.routines.length === 0 ? '' : `${todayDone.length}/${data.routines.length}`;
+    scheduled.length === 0 ? '予定なし' : `${doneCount}/${activeTotal}`;
 }
 
 function renderTodayTodos() {
@@ -1594,6 +2236,7 @@ function renderTodayTodos() {
 function renderTodoItem(t) {
   const li = document.createElement('li');
   li.className = 'item' + (t.completed ? ' done' : '');
+  li.dataset.id = t.id;
   const dueLabel = t.dueDate ? dueDateLabel(t.dueDate, t.completed) : '';
   const isOverdue = !t.completed && t.dueDate && t.dueDate < todayStr();
   const priorityBadge = t.priority !== 'normal'
@@ -1603,6 +2246,7 @@ function renderTodoItem(t) {
     <div class="item-body">
       <div class="item-title">${escapeHtml(t.title)}</div>
       <div class="item-meta">
+        ${tagChipHtml(t.tag)}
         ${priorityBadge}
         ${dueLabel ? `<span class="badge-due ${isOverdue ? 'overdue' : ''}">${dueLabel}</span>` : ''}
       </div>
@@ -1633,42 +2277,100 @@ function renderManageRoutines() {
     const streak = getRoutineStreak(r.id);
     const longest = getRoutineLongestStreak(r.id);
     const li = document.createElement('li');
-    li.className = 'item';
+    li.className = 'item draggable';
+    li.dataset.id = r.id;
+    const reminderInfo = r.reminder && r.reminder.enabled
+      ? `<span class="badge-reminder">⏰ ${escapeHtml(r.reminder.time)}</span>` : '';
     li.innerHTML = `
+      <span class="drag-handle" aria-hidden="true">⠿</span>
       <div class="emoji-badge">${escapeHtml(r.emoji || '✓')}</div>
       <div class="item-body">
         <div class="item-title">${escapeHtml(r.name)}</div>
         <div class="item-meta">
-          <span class="badge-streak ${streak === 0 ? 'zero' : ''}">
-            ${streak > 0 ? '🔥' : ''} 現在 ${streak}日連続
-          </span>
+          ${tagChipHtml(r.tag)}
+          <span class="badge-days">${escapeHtml(daysLabel(r.days))}</span>
+          <span class="badge-streak ${streak === 0 ? 'zero' : ''}">${streak > 0 ? '🔥' : ''} ${streak}日</span>
           <span>最長 ${longest}日</span>
+          ${reminderInfo}
         </div>
       </div>
-      <button class="item-action" aria-label="削除">×</button>
+      <button class="item-action edit-action" aria-label="編集" title="編集">⚙️</button>
+      <button class="item-action" aria-label="削除" title="削除">×</button>
     `;
-    li.querySelector('.item-action').addEventListener('click', () => deleteRoutine(r.id));
+    li.querySelector('.edit-action').addEventListener('click', () => openRoutineEditor(r.id));
+    li.querySelector('.item-action:not(.edit-action)').addEventListener('click', () => deleteRoutine(r.id));
     list.appendChild(li);
   });
+  makeSortable(list, (orderedIds) => {
+    data.routines.sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+    saveData();
+    renderAll();
+  }, (id) => openRoutineEditor(id));
 }
 
 let currentFilter = 'active';
+let currentTagFilter = 'all';
+
+function renderTodoTagFilter() {
+  const wrap = document.getElementById('todoTagFilter');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const makeBtn = (id, label, color) => {
+    const b = document.createElement('button');
+    b.className = 'tag-filter-btn' + (currentTagFilter === id ? ' active' : '');
+    b.textContent = label;
+    if (color) { b.style.setProperty('--tag-color', color); b.classList.add('has-color'); }
+    b.addEventListener('click', () => { currentTagFilter = id; renderManageTodos(); });
+    return b;
+  };
+  wrap.appendChild(makeBtn('all', 'すべて'));
+  data.tags.forEach(t => wrap.appendChild(makeBtn(t.id, t.name, t.color)));
+  wrap.appendChild(makeBtn('none', 'タグなし'));
+}
+
 function renderManageTodos() {
+  renderTodoTagFilter();
+  refreshTodoTagOptions();
   const list = document.getElementById('manageTodos');
   list.innerHTML = '';
+  // Manual order wins: the array order is the source of truth, only filtered here.
   let todos = [...data.todos];
   if (currentFilter === 'active') todos = todos.filter(t => !t.completed);
   if (currentFilter === 'done') todos = todos.filter(t => t.completed);
-  todos.sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    const prio = { high: 0, normal: 1, low: 2 };
-    if (prio[a.priority] !== prio[b.priority]) return prio[a.priority] - prio[b.priority];
-    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
-    if (a.dueDate) return -1;
-    if (b.dueDate) return 1;
-    return b.createdAt.localeCompare(a.createdAt);
+  if (currentTagFilter === 'none') todos = todos.filter(t => !t.tag);
+  else if (currentTagFilter !== 'all') todos = todos.filter(t => t.tag === currentTagFilter);
+
+  todos.forEach(t => {
+    const li = renderTodoItem(t);
+    li.classList.add('draggable');
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.setAttribute('aria-hidden', 'true');
+    handle.textContent = '⠿';
+    li.insertBefore(handle, li.firstChild);
+    list.appendChild(li);
   });
-  todos.forEach(t => list.appendChild(renderTodoItem(t)));
+
+  makeSortable(list, (orderedIds) => {
+    data.todos = reorderWithinVisible(data.todos, orderedIds);
+    saveData();
+    renderManageTodos();
+    renderTodayTodos();
+    renderTopbar();
+  }, (id) => openTodoEditor(id));
+}
+
+// Reorder only the currently-visible items while leaving hidden (filtered-out) items in place.
+function reorderWithinVisible(items, visibleOrderIds) {
+  const visibleSet = new Set(visibleOrderIds);
+  const queue = [...visibleOrderIds];
+  return items.map(item => {
+    if (visibleSet.has(item.id)) {
+      const id = queue.shift();
+      return items.find(x => x.id === id);
+    }
+    return item;
+  });
 }
 
 // Gym
@@ -1894,6 +2596,9 @@ function renderAll() {
   renderGym();
   renderJournal();
   renderStats();
+  renderCalendar();
+  renderTags();
+  renderSettings();
 }
 
 // ============================================================
@@ -1960,13 +2665,14 @@ async function addRoutine(name, emoji) {
   renderAll();
 }
 
-async function addTodo(title, dueDate, priority) {
+async function addTodo(title, dueDate, priority, tag) {
   if (!title.trim()) return;
   data.todos.push({
     id: uid(),
     title: title.trim(),
     dueDate: dueDate || null,
     priority: priority || 'normal',
+    tag: tag || null,
     completed: false,
     completedAt: null,
     createdAt: new Date().toISOString()
@@ -2059,6 +2765,488 @@ async function resetAll() {
   showToast('リセットしました');
 }
 
+// Skip / pause a routine for today (does not break the streak).
+async function toggleSkipForToday(routineId) {
+  const key = todayStr();
+  if (!data.skips[key]) data.skips[key] = [];
+  const idx = data.skips[key].indexOf(routineId);
+  if (idx >= 0) {
+    data.skips[key].splice(idx, 1);
+  } else {
+    data.skips[key].push(routineId);
+    // A skipped routine shouldn't also count as completed.
+    if (data.completions[key]) data.completions[key] = data.completions[key].filter(id => id !== routineId);
+  }
+  if (data.skips[key].length === 0) delete data.skips[key];
+  await saveData();
+  renderAll();
+}
+
+// ============================================================
+// Tags
+// ============================================================
+function renderTags() {
+  const list = document.getElementById('tagList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (data.tags.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'tag-empty';
+    li.textContent = 'タグがありません';
+    list.appendChild(li);
+  }
+  data.tags.forEach(t => {
+    const li = document.createElement('li');
+    li.className = 'tag-row';
+    li.innerHTML = `
+      <span class="tag-dot" style="background:${escapeHtml(t.color)}"></span>
+      <span class="tag-row-name">${escapeHtml(t.name)}</span>
+      <button class="item-action" aria-label="削除" title="削除">×</button>
+    `;
+    li.querySelector('button').addEventListener('click', () => deleteTag(t.id));
+    list.appendChild(li);
+  });
+}
+
+async function addTag(name, color) {
+  name = (name || '').trim();
+  if (!name) return;
+  data.tags.push({ id: uid(), name, color: color || '#5C6070' });
+  data.settings.tagsInit = true;
+  await saveData();
+  renderAll();
+}
+
+async function deleteTag(tagId) {
+  if (!confirm('このタグを削除します。タスクとの関連付けは解除されます。よろしいですか？')) return;
+  data.tags = data.tags.filter(t => t.id !== tagId);
+  data.routines.forEach(r => { if (r.tag === tagId) r.tag = null; });
+  data.todos.forEach(t => { if (t.tag === tagId) t.tag = null; });
+  if (currentTagFilter === tagId) currentTagFilter = 'all';
+  await saveData();
+  renderAll();
+}
+
+function buildTagSelect(wrap, selectedId, onSelect) {
+  wrap.innerHTML = '';
+  const makeBtn = (id, label, color) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tag-option' + (selectedId === id ? ' on' : '');
+    b.textContent = label;
+    if (color) { b.style.setProperty('--tag-color', color); b.classList.add('has-color'); }
+    b.addEventListener('click', () => {
+      wrap.querySelectorAll('.tag-option').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      onSelect(id);
+    });
+    return b;
+  };
+  wrap.appendChild(makeBtn(null, 'なし', null));
+  data.tags.forEach(t => wrap.appendChild(makeBtn(t.id, t.name, t.color)));
+}
+
+// ============================================================
+// Modal (routine / todo editor)
+// ============================================================
+function openModal(title, bodyEl, onSave) {
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('modalTitle').textContent = title;
+  const mb = document.getElementById('modalBody');
+  mb.innerHTML = '';
+  mb.appendChild(bodyEl);
+  overlay.classList.remove('hidden');
+  const saveBtn = document.getElementById('modalSave');
+  saveBtn.onclick = () => { if (onSave() !== false) closeModal(); };
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+function openRoutineEditor(routineId) {
+  const r = data.routines.find(x => x.id === routineId);
+  if (!r) return;
+  const selectedDays = new Set(r.days || []);
+  let selectedTag = r.tag || null;
+
+  const body = document.createElement('div');
+  body.className = 'modal-form';
+  body.innerHTML = `
+    <label class="modal-field">
+      <span class="modal-label">名前</span>
+      <input type="text" id="edRoutineName" maxlength="40">
+    </label>
+    <label class="modal-field">
+      <span class="modal-label">絵文字</span>
+      <input type="text" id="edRoutineEmoji" maxlength="2" class="emoji-input">
+    </label>
+    <div class="modal-field">
+      <span class="modal-label">タグ</span>
+      <div class="tag-select" id="edRoutineTags"></div>
+    </div>
+    <div class="modal-field">
+      <span class="modal-label">曜日</span>
+      <div class="day-select" id="edRoutineDays"></div>
+      <div class="modal-hint">何も選ばないと毎日表示されます。</div>
+    </div>
+    <div class="modal-field">
+      <span class="modal-label">リマインダー</span>
+      <div class="reminder-row">
+        <label class="switch"><input type="checkbox" id="edReminderOn"><span class="switch-track"></span></label>
+        <input type="time" id="edReminderTime">
+      </div>
+      <div class="modal-hint">アプリを開いている間だけ通知します。</div>
+    </div>
+  `;
+  openModal('ルーティンの設定', body, () => {
+    const name = body.querySelector('#edRoutineName').value.trim();
+    if (!name) { showToast('名前を入力してください'); return false; }
+    r.name = name;
+    r.emoji = body.querySelector('#edRoutineEmoji').value.trim() || '✓';
+    r.tag = selectedTag;
+    r.days = [...selectedDays].sort((a, b) => a - b);
+    r.reminder = {
+      enabled: body.querySelector('#edReminderOn').checked,
+      time: body.querySelector('#edReminderTime').value || '21:00'
+    };
+    saveData();
+    renderAll();
+    showToast('保存しました');
+  });
+
+  body.querySelector('#edRoutineName').value = r.name || '';
+  body.querySelector('#edRoutineEmoji').value = r.emoji === '✓' ? '' : (r.emoji || '');
+  body.querySelector('#edReminderOn').checked = !!(r.reminder && r.reminder.enabled);
+  body.querySelector('#edReminderTime').value = (r.reminder && r.reminder.time) || '21:00';
+  buildTagSelect(body.querySelector('#edRoutineTags'), selectedTag, (id) => { selectedTag = id; });
+
+  const dayWrap = body.querySelector('#edRoutineDays');
+  for (let i = 0; i < 7; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'day-pill' + (selectedDays.has(i) ? ' on' : '') + (i === 0 ? ' sun' : i === 6 ? ' sat' : '');
+    b.textContent = WEEKDAY_SHORT[i];
+    b.addEventListener('click', () => {
+      if (selectedDays.has(i)) selectedDays.delete(i); else selectedDays.add(i);
+      b.classList.toggle('on');
+    });
+    dayWrap.appendChild(b);
+  }
+}
+
+function openTodoEditor(todoId) {
+  const t = data.todos.find(x => x.id === todoId);
+  if (!t) return;
+  let selectedTag = t.tag || null;
+
+  const body = document.createElement('div');
+  body.className = 'modal-form';
+  body.innerHTML = `
+    <label class="modal-field"><span class="modal-label">内容</span><input type="text" id="edTodoTitle" maxlength="80"></label>
+    <label class="modal-field"><span class="modal-label">期限</span><input type="date" id="edTodoDue"></label>
+    <label class="modal-field"><span class="modal-label">優先度</span>
+      <select id="edTodoPriority">
+        <option value="high">高</option>
+        <option value="normal">通常</option>
+        <option value="low">低</option>
+      </select>
+    </label>
+    <div class="modal-field"><span class="modal-label">タグ</span><div class="tag-select" id="edTodoTags"></div></div>
+  `;
+  openModal('Todoの編集', body, () => {
+    const title = body.querySelector('#edTodoTitle').value.trim();
+    if (!title) { showToast('内容を入力してください'); return false; }
+    t.title = title;
+    t.dueDate = body.querySelector('#edTodoDue').value || null;
+    t.priority = body.querySelector('#edTodoPriority').value || 'normal';
+    t.tag = selectedTag;
+    saveData();
+    renderAll();
+    showToast('保存しました');
+  });
+
+  body.querySelector('#edTodoTitle').value = t.title || '';
+  body.querySelector('#edTodoDue').value = t.dueDate || '';
+  body.querySelector('#edTodoPriority').value = t.priority || 'normal';
+  buildTagSelect(body.querySelector('#edTodoTags'), selectedTag, (id) => { selectedTag = id; });
+}
+
+// ============================================================
+// Calendar (monthly view)
+// ============================================================
+let calCursor = (() => { const d = new Date(); d.setDate(1); return d; })();
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  if (!grid) return;
+  const year = calCursor.getFullYear();
+  const month = calCursor.getMonth();
+  document.getElementById('calLabel').textContent = `${year}年${month + 1}月`;
+  grid.innerHTML = '';
+
+  WEEKDAY_SHORT.forEach((w, i) => {
+    const h = document.createElement('div');
+    h.className = 'cal-head' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '');
+    h.textContent = w;
+    grid.appendChild(h);
+  });
+
+  const startPad = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let i = 0; i < startPad; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-cell empty';
+    grid.appendChild(e);
+  }
+  const todayKey = todayStr();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = dateStr(new Date(year, month, day));
+    const rate = getCompletionRateForDate(key);
+    const cell = document.createElement('div');
+    cell.className = `cal-cell l${getHeatLevel(rate)}` + (key === todayKey ? ' today' : '');
+    const active = scheduledActiveForDate(key).length;
+    const done = completedScheduledForDate(key).length;
+    cell.innerHTML = `<span class="cal-day">${day}</span>` +
+      (active > 0 ? `<span class="cal-frac">${done}/${active}</span>` : '');
+    cell.title = active > 0 ? `${month + 1}/${day} — ${done}/${active} 達成` : `${month + 1}/${day} — 予定なし`;
+    grid.appendChild(cell);
+  }
+}
+
+function calShift(delta) {
+  calCursor.setMonth(calCursor.getMonth() + delta);
+  renderCalendar();
+}
+
+// ============================================================
+// Theme (dark mode)
+// ============================================================
+function applyTheme() {
+  document.documentElement.dataset.theme = data.settings.theme === 'dark' ? 'dark' : 'light';
+}
+function updateThemeToggleIcon() {
+  const b = document.getElementById('headerThemeToggle');
+  if (b) b.textContent = data.settings.theme === 'dark' ? '☀️' : '🌙';
+}
+async function toggleTheme() {
+  data.settings.theme = data.settings.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  updateThemeToggleIcon();
+  await saveData();
+  renderSettings();
+}
+
+// ============================================================
+// Notifications (pseudo reminders)
+// ============================================================
+async function requestNotifPermission() {
+  if (!('Notification' in window)) { showToast('このブラウザは通知に未対応です'); return; }
+  try {
+    const p = await Notification.requestPermission();
+    if (p === 'granted') { showToast('通知を有効にしました'); checkReminders(); }
+    else showToast('通知は許可されませんでした');
+  } catch (e) { showToast('通知の設定に失敗しました'); }
+  renderSettings();
+}
+
+function loadFiredReminders() {
+  try {
+    const r = JSON.parse(localStorage.getItem(REMINDER_FIRED_KEY) || '{}');
+    if (r.date === todayStr()) return new Set(r.ids || []);
+  } catch (e) { /* ignore */ }
+  return new Set();
+}
+function saveFiredReminders(set) {
+  try { localStorage.setItem(REMINDER_FIRED_KEY, JSON.stringify({ date: todayStr(), ids: [...set] })); } catch (e) { /* ignore */ }
+}
+function checkReminders() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  const todayKey = todayStr();
+  const wd = now.getDay();
+  const fired = loadFiredReminders();
+  let changed = false;
+  data.routines.forEach(r => {
+    if (!r.reminder || !r.reminder.enabled || !r.reminder.time) return;
+    if (!isScheduled(r, wd)) return;
+    if (isSkipped(r.id, todayKey)) return;
+    if ((data.completions[todayKey] || []).includes(r.id)) return;
+    if (fired.has(r.id)) return;
+    if (r.reminder.time === hhmm) {
+      try { new Notification(`${r.emoji || '⏰'} ${r.name}`, { body: 'そろそろ時間です！', tag: 'habit-' + r.id }); } catch (e) { /* ignore */ }
+      showToast(`⏰ ${r.name} の時間です`);
+      fired.add(r.id);
+      changed = true;
+    }
+  });
+  if (changed) saveFiredReminders(fired);
+}
+let reminderTimer = null;
+function startReminderLoop() {
+  if (reminderTimer) clearInterval(reminderTimer);
+  reminderTimer = setInterval(checkReminders, 30000);
+  checkReminders();
+}
+
+// ============================================================
+// Backup / restore (JSON)
+// ============================================================
+function exportData() {
+  try {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `habit-backup-${todayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('バックアップを書き出しました');
+  } catch (e) { showToast('書き出しに失敗しました'); }
+}
+function importDataFromFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let parsed;
+    try { parsed = JSON.parse(reader.result); }
+    catch (e) { showToast('JSONの読み込みに失敗しました'); return; }
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.routines)) {
+      showToast('対応していないファイルです'); return;
+    }
+    if (!confirm('現在のデータを上書きして復元します。よろしいですか？')) return;
+    data = { ...JSON.parse(JSON.stringify(defaultData)), ...parsed };
+    normalizeData();
+    await saveData();
+    applyTheme();
+    updateThemeToggleIcon();
+    renderAll();
+    startReminderLoop();
+    showToast('データを復元しました');
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// Settings panel render
+// ============================================================
+function renderSettings() {
+  const themeBtn = document.getElementById('themeToggleBtn');
+  if (themeBtn) themeBtn.textContent = data.settings.theme === 'dark' ? '☀️ ライトモードにする' : '🌙 ダークモードにする';
+
+  const ns = document.getElementById('notifStatus');
+  const nbtn = document.getElementById('notifBtn');
+  if (ns && nbtn) {
+    if (!('Notification' in window)) {
+      ns.textContent = 'このブラウザは非対応です';
+      nbtn.disabled = true; nbtn.textContent = '利用できません';
+    } else if (Notification.permission === 'granted') {
+      ns.textContent = '許可済み — リマインダーが有効です';
+      nbtn.disabled = true; nbtn.textContent = '有効';
+    } else if (Notification.permission === 'denied') {
+      ns.textContent = 'ブロック中 — ブラウザ設定から許可してください';
+      nbtn.disabled = true; nbtn.textContent = 'ブロック中';
+    } else {
+      ns.textContent = '未許可';
+      nbtn.disabled = false; nbtn.textContent = '通知を許可する';
+    }
+  }
+}
+
+// ============================================================
+// Drag-to-reorder (long press)
+// ============================================================
+let drag = null;
+
+function makeSortable(listEl, onReorder, onTap) {
+  listEl._onReorder = onReorder;
+  listEl._onTap = onTap;
+  listEl.querySelectorAll('.draggable').forEach(li => {
+    li.addEventListener('pointerdown', sortPointerDown);
+  });
+}
+
+function teardownDrag(d) {
+  clearTimeout(d.timer);
+  d.li.removeEventListener('pointermove', sortPointerMove);
+  d.li.removeEventListener('pointerup', sortPointerUp);
+  d.li.removeEventListener('pointercancel', sortPointerUp);
+  d.li.classList.remove('dragging');
+  d.list.classList.remove('reordering');
+  try { d.li.releasePointerCapture(d.pointerId); } catch (e) { /* ignore */ }
+}
+
+function sortPointerDown(e) {
+  if (e.button && e.button !== 0) return;
+  if (e.target.closest('button, input, select, textarea, a')) return;
+  const li = e.currentTarget;
+  drag = {
+    li,
+    list: li.parentElement,
+    startX: e.clientX,
+    startY: e.clientY,
+    pointerId: e.pointerId,
+    dragging: false,
+    moved: false,
+    timer: setTimeout(startDragging, 240),
+  };
+  li.addEventListener('pointermove', sortPointerMove);
+  li.addEventListener('pointerup', sortPointerUp);
+  li.addEventListener('pointercancel', sortPointerUp);
+}
+
+function startDragging() {
+  if (!drag) return;
+  drag.dragging = true;
+  drag.li.classList.add('dragging');
+  drag.list.classList.add('reordering');
+  try { drag.li.setPointerCapture(drag.pointerId); } catch (e) { /* ignore */ }
+  if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { /* ignore */ } }
+}
+
+function sortPointerMove(e) {
+  if (!drag) return;
+  const dx = e.clientX - drag.startX;
+  const dy = e.clientY - drag.startY;
+  if (!drag.dragging) {
+    // Movement before the long-press fires means the user is scrolling.
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) { const d = drag; drag = null; teardownDrag(d); }
+    return;
+  }
+  drag.moved = true;
+  e.preventDefault();
+  const siblings = [...drag.list.querySelectorAll('.draggable')].filter(el => el !== drag.li);
+  const y = e.clientY;
+  let placed = false;
+  for (const sib of siblings) {
+    const rect = sib.getBoundingClientRect();
+    if (y < rect.top + rect.height / 2) { drag.list.insertBefore(drag.li, sib); placed = true; break; }
+  }
+  if (!placed) drag.list.appendChild(drag.li);
+}
+
+function sortPointerUp(e) {
+  if (!drag) return;
+  const d = drag;
+  drag = null;
+  const dx = e.clientX - d.startX;
+  const dy = e.clientY - d.startY;
+  teardownDrag(d);
+  if (d.dragging && d.moved) {
+    const orderedIds = [...d.list.querySelectorAll('.draggable')].map(el => el.dataset.id);
+    if (typeof d.list._onReorder === 'function') d.list._onReorder(orderedIds);
+  } else if (!d.dragging && e.type === 'pointerup' && Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+    if (typeof d.list._onTap === 'function') d.list._onTap(d.li.dataset.id);
+  }
+}
+
+// Block page scrolling only while a drag is actually in progress.
+document.addEventListener('touchmove', (e) => {
+  if (drag && drag.dragging) e.preventDefault();
+}, { passive: false });
+
 // ============================================================
 // Helpers
 // ============================================================
@@ -2107,12 +3295,28 @@ document.getElementById('todoForm').addEventListener('submit', async (e) => {
   await addTodo(
     document.getElementById('todoTitle').value,
     document.getElementById('todoDue').value,
-    document.getElementById('todoPriority').value
+    document.getElementById('todoPriority').value,
+    document.getElementById('todoTag').value || null
   );
   document.getElementById('todoTitle').value = '';
   document.getElementById('todoDue').value = '';
   document.getElementById('todoPriority').value = 'normal';
+  document.getElementById('todoTag').value = '';
 });
+
+function refreshTodoTagOptions() {
+  const sel = document.getElementById('todoTag');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">タグなし</option>';
+  data.tags.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = t.name;
+    sel.appendChild(o);
+  });
+  if (prev && data.tags.find(t => t.id === prev)) sel.value = prev;
+}
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -2178,11 +3382,47 @@ document.getElementById('journalText').addEventListener('blur', () => {
 
 document.getElementById('resetBtn').addEventListener('click', resetAll);
 
+// Theme
+document.getElementById('headerThemeToggle').addEventListener('click', toggleTheme);
+document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+
+// Notifications
+document.getElementById('notifBtn').addEventListener('click', requestNotifPermission);
+
+// Calendar navigation
+document.getElementById('calPrev').addEventListener('click', () => calShift(-1));
+document.getElementById('calNext').addEventListener('click', () => calShift(1));
+
+// Tag manager
+document.getElementById('tagForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await addTag(document.getElementById('tagName').value, document.getElementById('tagColor').value);
+  document.getElementById('tagName').value = '';
+});
+
+// Backup / restore
+document.getElementById('exportBtn').addEventListener('click', exportData);
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  importDataFromFile(file);
+  e.target.value = '';
+});
+
+// Modal
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+
 // ============================================================
 // Init
 // ============================================================
 (async function init() {
   await loadData();
+  applyTheme();
+  updateThemeToggleIcon();
 
   // First-run seeding only if everything is empty
   const isFirstRun = data.routines.length === 0
@@ -2206,5 +3446,6 @@ document.getElementById('resetBtn').addEventListener('click', resetAll);
   }
 
   renderAll();
+  startReminderLoop();
 })();
 </script>
